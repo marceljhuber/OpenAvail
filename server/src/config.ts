@@ -24,6 +24,9 @@ export const config = {
   googleClientId: required("GOOGLE_CLIENT_ID", "missing-client-id"),
   adminEmail: required("ADMIN_EMAIL", "admin@example.com").toLowerCase(),
   ownerName: process.env.OWNER_NAME ?? "OpenAvail",
+  // Dev-only password-less login for local testing without Google OAuth.
+  // Ignored entirely when NODE_ENV=production.
+  devLogin: process.env.DEV_LOGIN === "true",
   publicUrl: (process.env.PUBLIC_URL ?? "http://localhost:5173").replace(/\/$/, ""),
   inviteTtlMs: 24 * 60 * 60 * 1000,
   sessionTtlMs: 30 * 24 * 60 * 60 * 1000,

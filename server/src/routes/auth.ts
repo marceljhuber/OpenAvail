@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { config } from "../config.js";
 import {
   AuthError,
   authorizeAndRegister,
@@ -8,8 +9,8 @@ import {
   verifyGoogleToken,
   SESSION_COOKIE,
 } from "../auth.js";
-import { deleteSession } from "../repo.js";
-import type { User } from "../types.js";
+import { deleteSession, upsertUser } from "../repo.js";
+import type { Role, User } from "../types.js";
 
 interface GoogleBody {
   credential?: string;
@@ -63,4 +64,28 @@ export function registerAuthRoutes(app: FastifyInstance): void {
     reply.clearCookie(SESSION_COOKIE, { path: "/" });
     return { ok: true };
   });
+
+  // Dev-only login (no Google). Strictly gated: requires DEV_LOGIN=true AND a
+  // non-production NODE_ENV. Lets you exercise the app locally without OAuth.
+  if (config.devLogin && !config.isProd) {
+    app.post("/api/auth/dev", async (req, reply) => {
+      const { name, email } = (req.body ?? {}) as { name?: string; email?: string };
+      if (!name?.trim()) return reply.code(400).send({ error: "Name required." });
+      const cleanEmail = (email?.trim() || `${name.trim().toLowerCase()}@dev.local`).toLowerCase();
+      const now = new Date().toISOString();
+      const role: Role = cleanEmail === config.adminEmail ? "admin" : "member";
+      const user = upsertUser(app.db, {
+        id: `dev-${cleanEmail}`,
+        email: cleanEmail,
+        name: name.trim(),
+        picture: "",
+        role,
+        createdAt: now,
+      });
+      const session = startSession(app.db, user.id, now);
+      reply.setCookie(SESSION_COOKIE, session.id, sessionCookieOptions());
+      return { user: publicUser(user) };
+    });
+    app.log.warn("DEV_LOGIN enabled — /api/auth/dev is active (non-production only).");
+  }
 }

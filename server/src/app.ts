@@ -31,6 +31,7 @@ export function buildApp(db: DB): FastifyInstance {
   app.get("/api/config", async () => ({
     ownerName: config.ownerName,
     googleClientId: config.googleClientId,
+    devLogin: config.devLogin && !config.isProd,
   }));
 
   app.get("/api/health", async () => ({ ok: true }));

@@ -58,8 +58,10 @@ export async function initApp(): Promise<void> {
 }
 
 export async function refreshBoard(): Promise<void> {
-  const f = get(filters);
-  const state = await api.state(f.rangeFrom, f.rangeTo);
+  // Fetch the whole board (votes are tiny for a friend group). The calendar is
+  // then genuinely infinite, and the from/to range is applied client-side as an
+  // analysis window for the timeline, stats, filtering and sorting.
+  const state = await api.state();
   board.set(state);
 }
 
@@ -79,6 +81,15 @@ export function stopPolling(): void {
 
 export async function login(credential: string, invite?: string): Promise<User> {
   const user = await api.loginWithGoogle(credential, invite);
+  return afterLogin(user);
+}
+
+export async function loginDev(name: string, email?: string): Promise<User> {
+  const user = await api.loginDev(name, email);
+  return afterLogin(user);
+}
+
+async function afterLogin(user: User): Promise<User> {
   session.set(user);
   await refreshBoard();
   startPolling();

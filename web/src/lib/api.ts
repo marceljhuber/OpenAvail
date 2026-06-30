@@ -42,6 +42,12 @@ export const api = {
       body: JSON.stringify({ credential, invite }),
     }).then((r) => r.user),
 
+  loginDev: (name: string, email?: string) =>
+    request<{ user: User }>("/api/auth/dev", {
+      method: "POST",
+      body: JSON.stringify({ name, email }),
+    }).then((r) => r.user),
+
   logout: () => request<{ ok: true }>("/api/auth/logout", { method: "POST" }),
 
   state: (from?: string, to?: string) => {

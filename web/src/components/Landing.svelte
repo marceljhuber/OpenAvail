@@ -1,13 +1,28 @@
 <script lang="ts">
-  import { appConfig, login } from "../lib/stores";
+  import { appConfig, login, loginDev } from "../lib/stores";
   import { renderGoogleButton } from "../lib/google";
 
   let buttonEl = $state<HTMLDivElement>();
   let error = $state<string | null>(null);
   let busy = $state(false);
+  let devName = $state("");
   let rendered = false;
 
   const invite = new URLSearchParams(window.location.search).get("invite") ?? undefined;
+
+  async function onDevLogin(e: Event) {
+    e.preventDefault();
+    if (!devName.trim()) return;
+    busy = true;
+    error = null;
+    try {
+      await loginDev(devName.trim());
+    } catch (err) {
+      error = err instanceof Error ? err.message : "Sign-in failed.";
+    } finally {
+      busy = false;
+    }
+  }
 
   async function onCredential(credential: string) {
     busy = true;
@@ -56,6 +71,16 @@
 
     {#if !invite}
       <p class="locked">This board is private. Ask the owner for an invite link to join.</p>
+    {/if}
+
+    {#if $appConfig?.devLogin}
+      <form class="dev" onsubmit={onDevLogin}>
+        <p class="dev-label">Dev login (local testing only)</p>
+        <div class="dev-row">
+          <input placeholder="Your name" bind:value={devName} />
+          <button class="btn" type="submit">Continue</button>
+        </div>
+      </form>
     {/if}
   </div>
 </main>
@@ -124,5 +149,23 @@
     margin-top: 18px;
     color: var(--muted);
     font-size: 13px;
+  }
+  .dev {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px dashed var(--line);
+  }
+  .dev-label {
+    margin: 0 0 8px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .dev-row {
+    display: flex;
+    gap: 8px;
+  }
+  .dev-row input {
+    flex: 1;
   }
 </style>

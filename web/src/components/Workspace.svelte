@@ -1,5 +1,12 @@
 <script lang="ts">
-  import { appConfig, session, logout } from "../lib/stores";
+  import { appConfig, session, filters, logout } from "../lib/stores";
+  import type { ViewKind } from "../lib/stores";
+  import CalendarView from "./CalendarView.svelte";
+  import Sidebar from "./Sidebar.svelte";
+
+  function setView(view: ViewKind) {
+    filters.update((f) => ({ ...f, view }));
+  }
 
   async function onSignOut() {
     await logout();
@@ -23,13 +30,26 @@
     </div>
   </header>
 
-  <main class="body">
-    <!-- Controls, calendar, timeline, and admin panel are mounted in later steps. -->
-    <section class="panel placeholder">
-      <p class="eyebrow">Workspace</p>
-      <h2>Views are wired up next.</h2>
-    </section>
-  </main>
+  <div class="tabs panel">
+    <button class="tab" class:active={$filters.view === "calendar"} onclick={() => setView("calendar")}>
+      Calendar
+    </button>
+    <button class="tab" class:active={$filters.view === "timeline"} onclick={() => setView("timeline")}>
+      Timeline
+    </button>
+  </div>
+
+  {#if $filters.view === "calendar"}
+    <main class="calendar-layout">
+      <Sidebar />
+      <CalendarView />
+    </main>
+  {:else}
+    <main class="panel placeholder">
+      <p class="eyebrow">Timeline</p>
+      <h2>Timeline view is wired up next.</h2>
+    </main>
+  {/if}
 </div>
 
 <style>
@@ -78,7 +98,37 @@
     font-weight: 700;
     color: var(--ink);
   }
+  .tabs {
+    display: flex;
+    gap: 6px;
+    padding: 6px;
+    width: fit-content;
+  }
+  .tab {
+    min-height: 38px;
+    border: 0;
+    border-radius: 12px;
+    padding: 0 18px;
+    color: var(--muted);
+    background: transparent;
+    font-weight: 800;
+  }
+  .tab.active {
+    color: white;
+    background: #17201d;
+  }
+  .calendar-layout {
+    display: grid;
+    grid-template-columns: 320px minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+  }
   .placeholder {
     padding: 28px;
+  }
+  @media (max-width: 980px) {
+    .calendar-layout {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

@@ -13,6 +13,7 @@ export interface User {
 export interface AppConfig {
   ownerName: string;
   googleClientId: string;
+  devLogin: boolean;
 }
 
 /** votes[isoDate][userId] = Vote */
