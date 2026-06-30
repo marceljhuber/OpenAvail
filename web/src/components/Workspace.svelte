@@ -2,6 +2,7 @@
   import { appConfig, session, filters, logout } from "../lib/stores";
   import type { ViewKind } from "../lib/stores";
   import CalendarView from "./CalendarView.svelte";
+  import TimelineView from "./TimelineView.svelte";
   import Sidebar from "./Sidebar.svelte";
 
   function setView(view: ViewKind) {
@@ -45,9 +46,8 @@
       <CalendarView />
     </main>
   {:else}
-    <main class="panel placeholder">
-      <p class="eyebrow">Timeline</p>
-      <h2>Timeline view is wired up next.</h2>
+    <main>
+      <TimelineView />
     </main>
   {/if}
 </div>
@@ -122,9 +122,6 @@
     grid-template-columns: 320px minmax(0, 1fr);
     gap: 16px;
     align-items: start;
-  }
-  .placeholder {
-    padding: 28px;
   }
   @media (max-width: 980px) {
     .calendar-layout {
