@@ -1,9 +1,9 @@
 import { get, writable } from "svelte/store";
 import { api } from "./api";
 import { addMonths, daysInMonth, startOfMonth, toISO } from "./date";
-import type { AppConfig, BoardState, User, Vote } from "./types";
+import type { AppConfig, BoardState, PollView, User, Vote } from "./types";
 
-export type ViewKind = "calendar" | "timeline";
+export type ViewKind = "calendar" | "timeline" | "votings";
 export type SortKey = "date" | "yes" | "total" | "maybe" | "focus";
 
 export interface Filters {
@@ -29,6 +29,7 @@ const emptyBoard: BoardState = { members: [], votes: {}, changes: [] };
 export const appConfig = writable<AppConfig | null>(null);
 export const session = writable<User | null>(null);
 export const board = writable<BoardState>(emptyBoard);
+export const polls = writable<PollView[]>([]);
 export const loading = writable<boolean>(true);
 
 export const filters = writable<Filters>({
@@ -49,7 +50,7 @@ export async function initApp(): Promise<void> {
     appConfig.set(cfg);
     session.set(user);
     if (user) {
-      await refreshBoard();
+      await Promise.all([refreshBoard(), refreshPolls()]);
       startPolling();
     }
   } finally {
@@ -65,10 +66,32 @@ export async function refreshBoard(): Promise<void> {
   board.set(state);
 }
 
+export async function refreshPolls(): Promise<void> {
+  polls.set(await api.listPolls());
+}
+
+export async function createPoll(title: string, options: string[]): Promise<void> {
+  await api.createPoll(title, options);
+  await refreshPolls();
+}
+
+export async function votePoll(id: string, optionIds: string[]): Promise<void> {
+  const updated = await api.votePoll(id, optionIds);
+  polls.update((list) => list.map((p) => (p.id === id ? updated : p)));
+}
+
+export async function deletePoll(id: string): Promise<void> {
+  await api.deletePoll(id);
+  polls.update((list) => list.filter((p) => p.id !== id));
+}
+
 export function startPolling(intervalMs = 10000): void {
   stopPolling();
   pollTimer = setInterval(() => {
     refreshBoard().catch(() => {
+      /* transient; next tick retries */
+    });
+    refreshPolls().catch(() => {
       /* transient; next tick retries */
     });
   }, intervalMs);
@@ -91,7 +114,7 @@ export async function loginDev(name: string, email?: string): Promise<User> {
 
 async function afterLogin(user: User): Promise<User> {
   session.set(user);
-  await refreshBoard();
+  await Promise.all([refreshBoard(), refreshPolls()]);
   startPolling();
   return user;
 }
@@ -101,6 +124,7 @@ export async function logout(): Promise<void> {
   await api.logout();
   session.set(null);
   board.set(emptyBoard);
+  polls.set([]);
 }
 
 /**

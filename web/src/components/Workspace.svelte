@@ -5,6 +5,7 @@
   import TimelineView from "./TimelineView.svelte";
   import Sidebar from "./Sidebar.svelte";
   import Controls from "./Controls.svelte";
+  import PollsView from "./PollsView.svelte";
   import AdminPanel from "./AdminPanel.svelte";
 
   let adminOpen = $state(false);
@@ -50,19 +51,28 @@
       <button class="tab" class:active={$filters.view === "timeline"} onclick={() => setView("timeline")}>
         Timeline
       </button>
+      <button class="tab" class:active={$filters.view === "votings"} onclick={() => setView("votings")}>
+        Votings
+      </button>
     </div>
   </div>
 
-  <Controls />
+  {#if $filters.view !== "votings"}
+    <Controls />
+  {/if}
 
   {#if $filters.view === "calendar"}
     <main class="calendar-layout">
       <Sidebar />
       <CalendarView />
     </main>
-  {:else}
+  {:else if $filters.view === "timeline"}
     <main>
       <TimelineView />
+    </main>
+  {:else}
+    <main>
+      <PollsView />
     </main>
   {/if}
 </div>

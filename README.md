@@ -19,6 +19,8 @@ join through a time-limited invite link, sign in with Google, and vote on an inf
   always derived from a session cookie, never from the request body.
 - 🗓️ **Infinite month calendar** + **horizontal people × days timeline**, both windowed for speed.
 - 🔎 **Filter & sort by member** — e.g. *"only days where Rainer voted yes, ranked by most yes"*.
+- 🗳️ **Votings** — multiple-choice polls (e.g. "25.07. Day?" → Pokémon Day / One Piece Day / …)
+  whose results stay **hidden until you vote**, then reveal and stay editable. Run several at once.
 - 🪶 **Cheap to host** — Node + SQLite (single file), one small container.
 
 ## Tech stack
@@ -107,6 +109,9 @@ Google and join. Revoke links or remove members from the same panel.
 - **Range** — set the analysis window (e.g. 1 Jul – 1 Sep) for the timeline, stats and sorting.
 - **Focus + sort** — pick members and a required vote ("only days where Rainer voted yes"), then
   sort by most yes / responses / maybe, or "Most yes (focus)".
+- **Votings** — the third tab. Create a multiple-choice poll (title + editable options) and start
+  it; everyone votes blind, and results reveal only once each person has voted. Selections stay
+  editable, and you can run several polls at once. Creators and admins can delete a poll.
 
 ## Development
 

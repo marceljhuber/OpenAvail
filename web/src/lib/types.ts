@@ -50,3 +50,23 @@ export interface DaySummary {
   no: number;
   total: number;
 }
+
+export interface PollOptionView {
+  id: string;
+  label: string;
+  votes: number | null; // null until results are revealed (user has voted)
+}
+
+export interface PollView {
+  id: string;
+  title: string;
+  createdBy: string;
+  createdByName: string;
+  createdAt: string;
+  options: PollOptionView[];
+  myVotes: string[];
+  hasVoted: boolean;
+  revealed: boolean;
+  totalVoters: number | null;
+  canManage: boolean;
+}
