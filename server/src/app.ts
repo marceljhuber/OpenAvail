@@ -5,6 +5,8 @@ import type { DB } from "./db.js";
 import { resolveSessionUser, SESSION_COOKIE } from "./auth.js";
 import type { User } from "./types.js";
 import { registerAuthRoutes } from "./routes/auth.js";
+import { registerBoardRoutes } from "./routes/board.js";
+import { registerAdminRoutes } from "./routes/admin.js";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -34,7 +36,8 @@ export function buildApp(db: DB): FastifyInstance {
   app.get("/api/health", async () => ({ ok: true }));
 
   registerAuthRoutes(app);
-  // board + admin routes are registered in the next step.
+  registerBoardRoutes(app);
+  registerAdminRoutes(app);
 
   return app;
 }
