@@ -7,6 +7,7 @@ export default defineConfig({
   plugins: [svelte()],
   server: {
     port: 5173,
+    strictPort: true, // fail loudly instead of drifting to 5174 (breaks the OAuth origin)
     proxy: {
       "/api": {
         target: "http://localhost:8787",
