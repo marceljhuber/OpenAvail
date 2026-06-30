@@ -49,6 +49,35 @@ CREATE TABLE IF NOT EXISTS sessions (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
+
+CREATE TABLE IF NOT EXISTS polls (
+  id         TEXT PRIMARY KEY,
+  title      TEXT NOT NULL,
+  created_by TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_polls_created ON polls(created_at DESC);
+
+CREATE TABLE IF NOT EXISTS poll_options (
+  id       TEXT PRIMARY KEY,
+  poll_id  TEXT NOT NULL,
+  label    TEXT NOT NULL,
+  position INTEGER NOT NULL,
+  FOREIGN KEY (poll_id) REFERENCES polls(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_poll_options_poll ON poll_options(poll_id);
+
+CREATE TABLE IF NOT EXISTS poll_votes (
+  poll_id    TEXT NOT NULL,
+  option_id  TEXT NOT NULL,
+  user_id    TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (poll_id, option_id, user_id),
+  FOREIGN KEY (poll_id) REFERENCES polls(id) ON DELETE CASCADE,
+  FOREIGN KEY (option_id) REFERENCES poll_options(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_poll_votes_poll ON poll_votes(poll_id);
 `;
 
 export type DB = DatabaseSync;

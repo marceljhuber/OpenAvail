@@ -42,6 +42,38 @@ export interface Session {
   expiresAt: string;
 }
 
+export interface Poll {
+  id: string;
+  title: string;
+  createdBy: string;
+  createdAt: string;
+}
+
+export interface PollOption {
+  id: string;
+  pollId: string;
+  label: string;
+  position: number;
+}
+
+/**
+ * A poll as seen by a specific user. Results are blind until the user has
+ * voted: when `revealed` is false, `votes` and `totalVoters` are null.
+ */
+export interface PollView {
+  id: string;
+  title: string;
+  createdBy: string;
+  createdByName: string;
+  createdAt: string;
+  options: { id: string; label: string; votes: number | null }[];
+  myVotes: string[];
+  hasVoted: boolean;
+  revealed: boolean;
+  totalVoters: number | null;
+  canManage: boolean;
+}
+
 /** votes[isoDate][userId] = Vote */
 export type VotesByDate = Record<string, Record<string, Vote>>;
 
