@@ -5,6 +5,9 @@
   import TimelineView from "./TimelineView.svelte";
   import Sidebar from "./Sidebar.svelte";
   import Controls from "./Controls.svelte";
+  import AdminPanel from "./AdminPanel.svelte";
+
+  let adminOpen = $state(false);
 
   function setView(view: ViewKind) {
     filters.update((f) => ({ ...f, view }));
@@ -27,10 +30,17 @@
           <img class="avatar" src={$session.picture} alt="" referrerpolicy="no-referrer" />
         {/if}
         <span class="who">{$session.name}{$session.role === "admin" ? " · admin" : ""}</span>
+        {#if $session.role === "admin"}
+          <button class="btn" onclick={() => (adminOpen = true)}>Manage</button>
+        {/if}
         <button class="btn secondary" onclick={onSignOut}>Sign out</button>
       {/if}
     </div>
   </header>
+
+  {#if adminOpen}
+    <AdminPanel onClose={() => (adminOpen = false)} />
+  {/if}
 
   <div class="tabbar">
     <div class="tabs panel">
