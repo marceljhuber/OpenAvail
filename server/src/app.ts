@@ -1,5 +1,7 @@
+import { join } from "node:path";
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
 import cookie from "@fastify/cookie";
+import fastifyStatic from "@fastify/static";
 import { config } from "./config.js";
 import type { DB } from "./db.js";
 import { resolveSessionUser, SESSION_COOKIE } from "./auth.js";
@@ -39,6 +41,19 @@ export function buildApp(db: DB): FastifyInstance {
   registerAuthRoutes(app);
   registerBoardRoutes(app);
   registerAdminRoutes(app);
+
+  // Optionally serve the built SPA (single-container deploy). API routes are
+  // registered first; everything else falls back to index.html for client-side
+  // routing, while unknown /api paths still return JSON 404.
+  if (config.staticDir) {
+    app.register(fastifyStatic, { root: config.staticDir, wildcard: false });
+    app.setNotFoundHandler((req, reply) => {
+      if (req.url.startsWith("/api/")) {
+        return reply.code(404).send({ error: "Not found" });
+      }
+      return reply.sendFile("index.html");
+    });
+  }
 
   return app;
 }

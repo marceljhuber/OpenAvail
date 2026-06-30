@@ -21,6 +21,9 @@ export const config = {
   },
   port: Number(process.env.PORT ?? 8787),
   dbPath: process.env.DB_PATH ?? "./data/openavail.db",
+  // When set, the server also serves the built SPA from this directory (with
+  // history-API fallback), enabling a single-container deployment.
+  staticDir: process.env.STATIC_DIR || undefined,
   googleClientId: required("GOOGLE_CLIENT_ID", "missing-client-id"),
   adminEmail: required("ADMIN_EMAIL", "admin@example.com").toLowerCase(),
   ownerName: process.env.OWNER_NAME ?? "OpenAvail",

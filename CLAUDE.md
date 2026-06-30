@@ -27,7 +27,12 @@ Monorepo with npm workspaces:
 - `web/` — Svelte 5 + Vite + TS SPA, builds to `web/dist/` (served statically by Caddy in prod).
 - `server/` — Fastify + TS API. SQLite via the built-in `node:sqlite` (`DatabaseSync`) — **no
   native build step**; do not reintroduce `better-sqlite3` (it fails to compile on Node 26).
-- `deploy/` — Caddyfile + Docker Compose (two containers: Caddy static frontend + Node API).
+- `deploy/` — single-container Dockerfile + Compose. In production the Node server also serves
+  the built SPA from `STATIC_DIR` (with history-API fallback); `deploy/Caddyfile` is an optional
+  TLS front. HTTPS is required in prod because the session cookie is `Secure`.
+
+A `DEV_LOGIN=true` env var (non-production only) enables a name-only `/api/auth/dev` login and a
+dev form on the landing page, for local testing without Google OAuth.
 
 ### Security model (the reason for the rebuild — do not regress)
 The original prototype decoded the Google JWT client-side and trusted a client-supplied `user`

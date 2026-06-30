@@ -1,0 +1,17 @@
+# Optional TLS-terminating reverse proxy for OpenAvail.
+# Caddy fetches and renews certificates automatically for a public domain.
+#
+# Run separately, or add it as a second compose service that proxies to the
+# `openavail` container. Replace the domain with your own.
+
+avail.example.com {
+    encode zstd gzip
+    reverse_proxy openavail:8787
+}
+
+# Local/LAN without a public domain? Use Caddy's internal CA instead:
+#
+# https://192.168.178.100 {
+#     tls internal
+#     reverse_proxy openavail:8787
+# }

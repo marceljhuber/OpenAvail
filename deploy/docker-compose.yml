@@ -1,0 +1,31 @@
+# OpenAvail — single-container deployment (Node serves the API and the SPA).
+# Put a TLS-terminating reverse proxy in front (see Caddyfile) in production:
+# the session cookie is marked Secure when NODE_ENV=production, so the app must
+# be reached over HTTPS.
+#
+#   cd deploy && docker compose up -d --build
+#
+# Configuration is read from the repo-root .env (see ../.env.example).
+
+services:
+  openavail:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: openavail:latest
+    container_name: openavail
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      NODE_ENV: production
+      STATIC_DIR: /app/web/dist
+      DB_PATH: /data/openavail.db
+      PORT: "8787"
+    ports:
+      - "8088:8787" # host:container — front this with TLS in production
+    volumes:
+      - openavail-data:/data
+
+volumes:
+  openavail-data:
