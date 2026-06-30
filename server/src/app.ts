@@ -1,0 +1,64 @@
+import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
+import cookie from "@fastify/cookie";
+import { config } from "./config.js";
+import type { DB } from "./db.js";
+import { resolveSessionUser, SESSION_COOKIE } from "./auth.js";
+import type { User } from "./types.js";
+import { registerAuthRoutes } from "./routes/auth.js";
+
+declare module "fastify" {
+  interface FastifyInstance {
+    db: DB;
+  }
+  interface FastifyRequest {
+    user: User | null;
+  }
+}
+
+export function buildApp(db: DB): FastifyInstance {
+  const app = Fastify({
+    logger: config.isProd ? true : { level: "info" },
+  });
+
+  app.decorate("db", db);
+  app.decorateRequest("user", null);
+
+  app.register(cookie);
+
+  // Public config the browser needs before login (owner branding + client id).
+  app.get("/api/config", async () => ({
+    ownerName: config.ownerName,
+    googleClientId: config.googleClientId,
+  }));
+
+  app.get("/api/health", async () => ({ ok: true }));
+
+  registerAuthRoutes(app);
+  // board + admin routes are registered in the next step.
+
+  return app;
+}
+
+/** preHandler: require a valid session; sets request.user or replies 401. */
+export async function requireUser(req: FastifyRequest, reply: FastifyReply): Promise<void> {
+  const user = resolveSessionUser(req.server.db, req.cookies[SESSION_COOKIE]);
+  if (!user) {
+    await reply.code(401).send({ error: "Not signed in." });
+    return;
+  }
+  req.user = user;
+}
+
+/** preHandler: require an admin session; replies 401/403 as appropriate. */
+export async function requireAdmin(req: FastifyRequest, reply: FastifyReply): Promise<void> {
+  const user = resolveSessionUser(req.server.db, req.cookies[SESSION_COOKIE]);
+  if (!user) {
+    await reply.code(401).send({ error: "Not signed in." });
+    return;
+  }
+  if (user.role !== "admin") {
+    await reply.code(403).send({ error: "Admin only." });
+    return;
+  }
+  req.user = user;
+}

@@ -1,11 +1,15 @@
-import Fastify from "fastify";
 import { config } from "./config.js";
+import { openDb } from "./db.js";
+import { buildApp } from "./app.js";
+import { deleteExpiredSessions } from "./repo.js";
 
-const app = Fastify({ logger: { transport: undefined, level: "info" } });
+const db = openDb(config.dbPath);
 
-app.get("/api/health", async () => ({ ok: true }));
+// Sweep expired sessions on boot and hourly.
+deleteExpiredSessions(db, new Date().toISOString());
+setInterval(() => deleteExpiredSessions(db, new Date().toISOString()), 60 * 60 * 1000).unref();
 
-// Routes (auth, state, vote, admin) are registered in the following steps.
+const app = buildApp(db);
 
 app
   .listen({ port: config.port, host: "0.0.0.0" })
