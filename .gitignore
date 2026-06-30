@@ -1,0 +1,29 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# builds
+web/dist/
+server/dist/
+*.tsbuildinfo
+
+# runtime data / secrets
+.env
+.env.local
+data/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+
+# editor / os
+.DS_Store
+.vscode/
+.idea/
+*.log
+
+# personal homelab notes (internal IPs / container names — not for public repo)
+INDEX.md
+
+# legacy prototype kept locally for porting reference, not published
+legacy/

@@ -1,0 +1,22 @@
+{
+  "name": "openavail",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Self-hostable group availability planner — vote yes/maybe/no on days and find when everyone can meet.",
+  "license": "MIT",
+  "workspaces": [
+    "web",
+    "server"
+  ],
+  "scripts": {
+    "dev": "npm-run-all --parallel dev:server dev:web",
+    "dev:web": "npm run dev --workspace web",
+    "dev:server": "npm run dev --workspace server",
+    "build": "npm run build --workspace web && npm run build --workspace server",
+    "test": "npm run test --workspace server",
+    "start": "npm run start --workspace server"
+  },
+  "devDependencies": {
+    "npm-run-all": "^4.1.5"
+  }
+}
