@@ -1,0 +1,120 @@
+import { get, writable } from "svelte/store";
+import { api } from "./api";
+import { addMonths, daysInMonth, startOfMonth, toISO } from "./date";
+import type { AppConfig, BoardState, User, Vote } from "./types";
+
+export type ViewKind = "calendar" | "timeline";
+export type SortKey = "date" | "yes" | "total" | "maybe" | "focus";
+
+export interface Filters {
+  rangeFrom: string;
+  rangeTo: string;
+  /** user ids whose availability we focus on (e.g. "only days Rainer can come") */
+  focusMembers: string[];
+  /** the vote those focus members must have for a day to pass the filter */
+  focusVote: Vote;
+  sortBy: SortKey;
+  view: ViewKind;
+}
+
+function defaultRange(): { rangeFrom: string; rangeTo: string } {
+  const start = startOfMonth(new Date());
+  const end = addMonths(start, 2);
+  const last = new Date(end.getFullYear(), end.getMonth(), daysInMonth(end.getFullYear(), end.getMonth()));
+  return { rangeFrom: toISO(start), rangeTo: toISO(last) };
+}
+
+const emptyBoard: BoardState = { members: [], votes: {}, changes: [] };
+
+export const appConfig = writable<AppConfig | null>(null);
+export const session = writable<User | null>(null);
+export const board = writable<BoardState>(emptyBoard);
+export const loading = writable<boolean>(true);
+
+export const filters = writable<Filters>({
+  ...defaultRange(),
+  focusMembers: [],
+  focusVote: "yes",
+  sortBy: "date",
+  view: "calendar",
+});
+
+let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+/** Load public config + existing session on boot. */
+export async function initApp(): Promise<void> {
+  loading.set(true);
+  try {
+    const [cfg, user] = await Promise.all([api.config(), api.me()]);
+    appConfig.set(cfg);
+    session.set(user);
+    if (user) {
+      await refreshBoard();
+      startPolling();
+    }
+  } finally {
+    loading.set(false);
+  }
+}
+
+export async function refreshBoard(): Promise<void> {
+  const f = get(filters);
+  const state = await api.state(f.rangeFrom, f.rangeTo);
+  board.set(state);
+}
+
+export function startPolling(intervalMs = 10000): void {
+  stopPolling();
+  pollTimer = setInterval(() => {
+    refreshBoard().catch(() => {
+      /* transient; next tick retries */
+    });
+  }, intervalMs);
+}
+
+export function stopPolling(): void {
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = null;
+}
+
+export async function login(credential: string, invite?: string): Promise<User> {
+  const user = await api.loginWithGoogle(credential, invite);
+  session.set(user);
+  await refreshBoard();
+  startPolling();
+  return user;
+}
+
+export async function logout(): Promise<void> {
+  stopPolling();
+  await api.logout();
+  session.set(null);
+  board.set(emptyBoard);
+}
+
+/**
+ * Optimistically toggle the current user's vote, then persist. The day's votes
+ * are updated locally first so the UI feels instant; a failed request reverts.
+ */
+export async function castVote(date: string, vote: Vote): Promise<void> {
+  const user = get(session);
+  if (!user) return;
+
+  const prev = get(board);
+  const dayVotes = { ...(prev.votes[date] ?? {}) };
+  const current = dayVotes[user.id];
+  if (current === vote) delete dayVotes[user.id];
+  else dayVotes[user.id] = vote;
+
+  const nextVotes = { ...prev.votes };
+  if (Object.keys(dayVotes).length === 0) delete nextVotes[date];
+  else nextVotes[date] = dayVotes;
+  board.set({ ...prev, votes: nextVotes });
+
+  try {
+    await api.vote(date, vote);
+    await refreshBoard();
+  } catch {
+    board.set(prev); // revert on failure
+  }
+}
