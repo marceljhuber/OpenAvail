@@ -4,6 +4,7 @@
   import CalendarView from "./CalendarView.svelte";
   import TimelineView from "./TimelineView.svelte";
   import Sidebar from "./Sidebar.svelte";
+  import Controls from "./Controls.svelte";
 
   function setView(view: ViewKind) {
     filters.update((f) => ({ ...f, view }));
@@ -31,14 +32,18 @@
     </div>
   </header>
 
-  <div class="tabs panel">
-    <button class="tab" class:active={$filters.view === "calendar"} onclick={() => setView("calendar")}>
-      Calendar
-    </button>
-    <button class="tab" class:active={$filters.view === "timeline"} onclick={() => setView("timeline")}>
-      Timeline
-    </button>
+  <div class="tabbar">
+    <div class="tabs panel">
+      <button class="tab" class:active={$filters.view === "calendar"} onclick={() => setView("calendar")}>
+        Calendar
+      </button>
+      <button class="tab" class:active={$filters.view === "timeline"} onclick={() => setView("timeline")}>
+        Timeline
+      </button>
+    </div>
   </div>
+
+  <Controls />
 
   {#if $filters.view === "calendar"}
     <main class="calendar-layout">
