@@ -70,6 +70,11 @@ export const api = {
   listMembers: () => request<{ members: User[] }>("/api/members").then((r) => r.members),
   removeMember: (id: string) =>
     request<{ ok: true }>(`/api/members/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  renameMember: (id: string, name: string) =>
+    request<{ ok: true; member: User }>(`/api/members/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      body: JSON.stringify({ name }),
+    }),
 
   // polls
   listPolls: () => request<{ polls: PollView[] }>("/api/polls").then((r) => r.polls),

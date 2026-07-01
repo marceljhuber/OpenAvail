@@ -9,6 +9,7 @@ import {
   getUserById,
   listInvites,
   listMembers,
+  renameUser,
   revokeInvite,
 } from "../repo.js";
 import type { Invite } from "../types.js";
@@ -54,6 +55,20 @@ export function registerAdminRoutes(app: FastifyInstance): void {
   app.get("/api/members", { preHandler: requireAdmin }, async () => ({
     members: listMembers(app.db),
   }));
+
+  // Rename any member (admin only). Keeps denormalized names in sync.
+  app.patch("/api/members/:id", { preHandler: requireAdmin }, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const { name } = (req.body ?? {}) as { name?: unknown };
+    const trimmed = typeof name === "string" ? name.trim() : "";
+    if (!trimmed) return reply.code(400).send({ error: "Name is required." });
+    if (trimmed.length > 80) return reply.code(400).send({ error: "Name is too long." });
+    const target = getUserById(app.db, id);
+    if (!target) return reply.code(404).send({ error: "No such member." });
+    renameUser(app.db, id, trimmed);
+    bus.publish("board");
+    return { ok: true, member: getUserById(app.db, id) };
+  });
 
   // Remove a member (and their votes via ON DELETE CASCADE). Admins are protected.
   app.delete("/api/members/:id", { preHandler: requireAdmin }, async (req, reply) => {

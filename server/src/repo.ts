@@ -74,6 +74,13 @@ export function deleteUser(db: DB, id: string): void {
   db.prepare(`DELETE FROM users WHERE id = ?`).run(id);
 }
 
+/** Rename a user, keeping the denormalized copies in comments/changes in sync. */
+export function renameUser(db: DB, id: string, name: string): void {
+  db.prepare(`UPDATE users SET name = ? WHERE id = ?`).run(name, id);
+  db.prepare(`UPDATE day_comments SET user_name = ? WHERE user_id = ?`).run(name, id);
+  db.prepare(`UPDATE changes SET user_name = ? WHERE user_id = ?`).run(name, id);
+}
+
 // ─── votes ───────────────────────────────────────────────────────────────────
 export function getVote(db: DB, userId: string, date: string): Vote | null {
   const row = db

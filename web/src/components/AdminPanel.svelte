@@ -12,6 +12,8 @@
   let busy = $state(false);
   let error = $state<string | null>(null);
   let copied = $state<string | null>(null);
+  let editingId = $state<string | null>(null);
+  let editName = $state("");
 
   async function load() {
     error = null;
@@ -52,6 +54,36 @@
     if (!confirm("Revoke this invite link? It will stop working immediately.")) return;
     await api.revokeInvite(token);
     await load();
+  }
+
+  function startEdit(member: User) {
+    editingId = member.id;
+    editName = member.name;
+    error = null;
+  }
+
+  function cancelEdit() {
+    editingId = null;
+    editName = "";
+  }
+
+  async function saveEdit(member: User) {
+    const next = editName.trim();
+    if (!next || next === member.name) {
+      cancelEdit();
+      return;
+    }
+    busy = true;
+    error = null;
+    try {
+      await api.renameMember(member.id, next);
+      cancelEdit();
+      await Promise.all([load(), refreshBoard()]);
+    } catch (e) {
+      error = e instanceof Error ? e.message : "Failed to rename member.";
+    } finally {
+      busy = false;
+    }
   }
 
   async function remove(member: User) {
@@ -132,15 +164,35 @@
       <ul class="list">
         {#each members as m (m.id)}
           <li class="row member">
-            <span class="who">
-              <strong>{m.name}</strong>
-              <span class="muted">{m.email}</span>
-            </span>
-            <span class="role {m.role}">{m.role}</span>
-            {#if m.role === "admin" || m.id === $session?.id}
-              <span class="muted small">—</span>
+            {#if editingId === m.id}
+              <form
+                class="editform"
+                onsubmit={(e) => { e.preventDefault(); saveEdit(m); }}
+              >
+                <!-- svelte-ignore a11y_autofocus -->
+                <input
+                  class="editname"
+                  bind:value={editName}
+                  maxlength="80"
+                  autofocus
+                  onkeydown={(e) => e.key === "Escape" && cancelEdit()}
+                  aria-label="Member name"
+                />
+                <button class="link" type="submit" disabled={busy || !editName.trim()}>save</button>
+                <button class="link muted" type="button" onclick={cancelEdit}>cancel</button>
+              </form>
             {:else}
-              <button class="link danger" onclick={() => remove(m)}>remove</button>
+              <span class="who">
+                <strong>{m.name}</strong>
+                <span class="muted">{m.email}</span>
+              </span>
+              <span class="role {m.role}">{m.role}</span>
+              <button class="link" onclick={() => startEdit(m)}>rename</button>
+              {#if m.role === "admin" || m.id === $session?.id}
+                <span class="muted small">—</span>
+              {:else}
+                <button class="link danger" onclick={() => remove(m)}>remove</button>
+              {/if}
             {/if}
           </li>
         {/each}
@@ -213,6 +265,7 @@
   }
   .url {
     flex: 1;
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -248,8 +301,25 @@
   }
   .member .who {
     flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
+  }
+  .member .who > * {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .editform {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+  .editname {
+    flex: 1;
+    min-width: 0;
   }
   .role {
     border-radius: 999px;

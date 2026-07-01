@@ -49,6 +49,7 @@
 >
   <div class="day-head">
     <span class="date-number" data-weekday={WEEKDAYS[mondayBasedDay(date)]}>{date.getDate()}</span>
+    <span class="weekday-tag">{WEEKDAYS[mondayBasedDay(date)]}</span>
     <span class="yes-score" title="{summary.yes} of {members.length} said yes">
       {summary.yes}/{members.length}
     </span>
@@ -123,6 +124,17 @@
     font-weight: 900;
     flex: 0 0 auto;
   }
+  /* the calendar's Mon–Sun header is hidden on mobile (see CalendarView),
+     so surface each day's weekday inline there instead */
+  .weekday-tag {
+    display: none;
+    color: var(--muted);
+    font-weight: 800;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    flex: 0 0 auto;
+  }
   .yes-score {
     color: var(--yes-ink);
     font-weight: 800;
@@ -180,5 +192,11 @@
   }
   .voter-list .no strong {
     color: var(--no-ink);
+  }
+
+  @media (max-width: 720px) {
+    .weekday-tag {
+      display: inline;
+    }
   }
 </style>
