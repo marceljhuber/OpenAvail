@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { appConfig, session, filters, logout } from "../lib/stores";
+  import { appConfig, session, filters, selectedDay, logout } from "../lib/stores";
   import type { ViewKind } from "../lib/stores";
+  import DayModal from "./DayModal.svelte";
   import CalendarView from "./CalendarView.svelte";
   import TimelineView from "./TimelineView.svelte";
   import Sidebar from "./Sidebar.svelte";
@@ -41,6 +42,10 @@
 
   {#if adminOpen}
     <AdminPanel onClose={() => (adminOpen = false)} />
+  {/if}
+
+  {#if $selectedDay}
+    <DayModal iso={$selectedDay} onClose={() => selectedDay.set(null)} />
   {/if}
 
   <div class="body">

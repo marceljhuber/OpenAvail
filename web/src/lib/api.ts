@@ -1,4 +1,4 @@
-import type { AppConfig, BoardState, Invite, PollView, User, Vote } from "./types";
+import type { AppConfig, BoardState, Comment, Invite, PollView, User, Vote } from "./types";
 
 export class ApiError extends Error {
   constructor(
@@ -82,4 +82,16 @@ export const api = {
     }),
   deletePoll: (id: string) =>
     request<{ ok: true }>(`/api/polls/${encodeURIComponent(id)}`, { method: "DELETE" }),
+
+  // comments
+  commentCounts: () =>
+    request<{ counts: Record<string, number> }>("/api/comments/counts").then((r) => r.counts),
+  listComments: (date: string) =>
+    request<{ comments: Comment[] }>(`/api/comments?date=${encodeURIComponent(date)}`).then(
+      (r) => r.comments,
+    ),
+  addComment: (date: string, body: string) =>
+    request<Comment>("/api/comments", { method: "POST", body: JSON.stringify({ date, body }) }),
+  deleteComment: (id: string) =>
+    request<{ ok: true }>(`/api/comments/${encodeURIComponent(id)}`, { method: "DELETE" }),
 };

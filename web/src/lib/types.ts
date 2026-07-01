@@ -51,6 +51,15 @@ export interface DaySummary {
   total: number;
 }
 
+export interface Comment {
+  id: string;
+  date: string;
+  userId: string;
+  userName: string;
+  body: string;
+  createdAt: string;
+}
+
 export interface PollOptionView {
   id: string;
   label: string;

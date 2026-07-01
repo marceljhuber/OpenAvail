@@ -78,6 +78,17 @@ CREATE TABLE IF NOT EXISTS poll_votes (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_poll_votes_poll ON poll_votes(poll_id);
+
+CREATE TABLE IF NOT EXISTS day_comments (
+  id         TEXT PRIMARY KEY,
+  date       TEXT NOT NULL,
+  user_id    TEXT NOT NULL,
+  user_name  TEXT NOT NULL,
+  body       TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_day_comments_date ON day_comments(date, created_at);
 `;
 
 export type DB = DatabaseSync;

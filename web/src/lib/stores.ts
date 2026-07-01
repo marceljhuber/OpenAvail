@@ -30,6 +30,8 @@ export const appConfig = writable<AppConfig | null>(null);
 export const session = writable<User | null>(null);
 export const board = writable<BoardState>(emptyBoard);
 export const polls = writable<PollView[]>([]);
+export const commentCounts = writable<Record<string, number>>({});
+export const selectedDay = writable<string | null>(null);
 export const loading = writable<boolean>(true);
 
 export const filters = writable<Filters>({
@@ -51,7 +53,7 @@ export async function initApp(): Promise<void> {
     appConfig.set(cfg);
     session.set(user);
     if (user) {
-      await Promise.all([refreshBoard(), refreshPolls()]);
+      await Promise.all([refreshBoard(), refreshPolls(), refreshCommentCounts()]);
       startLive();
     }
   } finally {
@@ -69,6 +71,10 @@ export async function refreshBoard(): Promise<void> {
 
 export async function refreshPolls(): Promise<void> {
   polls.set(await api.listPolls());
+}
+
+export async function refreshCommentCounts(): Promise<void> {
+  commentCounts.set(await api.commentCounts());
 }
 
 export async function createPoll(title: string, options: string[]): Promise<void> {
@@ -89,6 +95,7 @@ export async function deletePoll(id: string): Promise<void> {
 function refreshAll(): void {
   refreshBoard().catch(() => {});
   refreshPolls().catch(() => {});
+  refreshCommentCounts().catch(() => {});
 }
 
 /** Live updates via Server-Sent Events, with a slow safety poll as fallback
@@ -102,6 +109,7 @@ export function startLive(): void {
         const { channel } = JSON.parse(e.data) as { channel: string };
         if (channel === "board") refreshBoard().catch(() => {});
         else if (channel === "polls") refreshPolls().catch(() => {});
+        else if (channel === "comments") refreshCommentCounts().catch(() => {});
       } catch {
         /* ignore malformed frames */
       }
@@ -143,6 +151,8 @@ export async function logout(): Promise<void> {
   session.set(null);
   board.set(emptyBoard);
   polls.set([]);
+  commentCounts.set({});
+  selectedDay.set(null);
 }
 
 /**

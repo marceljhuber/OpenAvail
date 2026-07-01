@@ -74,6 +74,15 @@ export interface PollView {
   canManage: boolean;
 }
 
+export interface Comment {
+  id: string;
+  date: string;
+  userId: string;
+  userName: string;
+  body: string;
+  createdAt: string;
+}
+
 /** votes[isoDate][userId] = Vote */
 export type VotesByDate = Record<string, Record<string, Vote>>;
 

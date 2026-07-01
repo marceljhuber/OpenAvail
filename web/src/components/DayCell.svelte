@@ -2,6 +2,7 @@
   import type { DaySummary, User, Vote, VotesByDate } from "../lib/types";
   import { summarizeDay, getDayVoters, VOTE_LABEL } from "../lib/vote";
   import { WEEKDAYS, mondayBasedDay } from "../lib/date";
+  import { commentCounts, selectedDay } from "../lib/stores";
   import VoteButtons from "./VoteButtons.svelte";
 
   let {
@@ -30,6 +31,8 @@
   const alpha = $derived(Math.min(0.38, (summary.yes / Math.max(1, maxYes)) * 0.34));
   const isTop = $derived(maxYes > 0 && summary.yes === maxYes);
 
+  const commentN = $derived($commentCounts[iso] ?? 0);
+
   const voterRows: { vote: Vote; names: string[] }[] = $derived(
     (["yes", "maybe", "no"] as Vote[])
       .map((v) => ({ vote: v, names: voters[v] }))
@@ -49,6 +52,15 @@
     <span class="yes-score" title="{summary.yes} of {members.length} said yes">
       {summary.yes}/{members.length}
     </span>
+    <button
+      class="cbtn"
+      class:has={commentN > 0}
+      onclick={() => selectedDay.set(iso)}
+      title="Comments & details"
+      aria-label="Open day details and comments"
+    >
+      💬{commentN > 0 ? ` ${commentN}` : ""}
+    </button>
   </div>
   <div class="counts">
     <span class="pill yes">{summary.yes}</span>
@@ -114,6 +126,23 @@
     overflow: hidden;
     text-overflow: ellipsis;
     min-width: 0;
+    flex: 1;
+    text-align: right;
+  }
+  .cbtn {
+    flex: 0 0 auto;
+    border: 0;
+    background: transparent;
+    padding: 0 2px;
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--muted);
+    opacity: 0.6;
+    line-height: 1;
+  }
+  .cbtn.has {
+    opacity: 1;
+    color: var(--ink);
   }
   .counts {
     display: flex;
