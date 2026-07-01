@@ -105,7 +105,9 @@ cd deploy && docker compose up -d --build
 
 Sign in as the admin → **Manage** → **Create invite link**. The link is copied to your clipboard
 and is valid for ~24 hours; share it in your group chat. Anyone who opens it can sign in with
-Google and join. Revoke links or remove members from the same panel.
+Google and join. From the same panel the admin can **revoke links**, **remove members**, and
+**rename any member** (handy when someone's Google display name is unhelpful) — renames apply
+everywhere their name appears, including past comments and the change log.
 
 ## Using the app
 

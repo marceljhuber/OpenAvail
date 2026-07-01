@@ -172,17 +172,84 @@ opens it can sign in with Google and join. Revoke links or remove members from t
 
 ---
 
-## 8. Updating
+## 8. Upgrading / migrating an existing deployment (keeping all data)
+
+Upgrading to a newer version of OpenAvail — a new feature release, or just the latest `main` —
+**does not touch your data**. All state (users, votes, comments, polls, invites, sessions) lives
+in one SQLite file inside the `openavail-data` Docker volume. Rebuilding the image only replaces
+the application code; the volume is untouched. The schema is additive
+(`CREATE TABLE IF NOT EXISTS`, and new columns are added defensively), so a newer build simply
+picks up the existing database and adds anything new on first start.
+
+### The normal in-place upgrade
+
+If you already run OpenAvail from this repo with the standard Compose setup, upgrading is three
+commands:
 
 ```bash
 cd OpenAvail
-git pull
+git pull                       # or: git fetch && git checkout <tag>
 cd deploy
-docker compose up -d --build
+docker compose up -d --build   # rebuild app image, recreate container, reuse the volume
 ```
 
-The SQLite schema is additive (`CREATE TABLE IF NOT EXISTS`), so updates **preserve your data**.
-The database lives in the `openavail-data` volume and survives rebuilds.
+Then hard-refresh the browser (Ctrl/Cmd-Shift-R) so it loads the new web assets, and confirm:
+
+```bash
+curl -s localhost:8088/api/health   # {"ok":true}
+```
+
+Because Compose reuses the named `openavail-data` volume by default, **your database carries over
+automatically** — there is no data migration step to run.
+
+### Always back up first
+
+Even though upgrades are safe, snapshot the database before every upgrade so you can roll back:
+
+```bash
+# with the app still running (SQLite copy is fine for our low write volume)
+docker run --rm -v openavail-data:/data -v "$PWD":/backup alpine \
+  sh -c 'cp /data/openavail.db /backup/openavail-$(date +%F-%H%M).db'
+```
+
+Keep that file somewhere safe. To roll back, `git checkout` the previous version, restore the
+file (see below), and `docker compose up -d --build`.
+
+### Migrating to a new server, or from a much older / non-Docker deployment
+
+The whole dataset is that single `openavail.db` file, so "migrating" is really just "move the DB
+file onto the new deployment's volume." Wherever your current DB lives:
+
+- **Docker volume** (standard setup): copy it out with the backup command above.
+- **Bare Node run** (the appendix setup): it's the file at your `DB_PATH` (e.g. `./data/openavail.db`).
+- **Older / prototype deployment:** whatever path that version wrote its SQLite file to.
+
+On the new server, set up the app as in steps 4–6 but **don't start it yet** (or start it once to
+create the volume, then stop it). Then load your DB into the `openavail-data` volume:
+
+```bash
+# copy a local backup file (openavail.db) into the volume, then start the app
+docker compose stop openavail
+docker run --rm -v openavail-data:/data -v "$PWD":/backup alpine \
+  sh -c 'cp /backup/openavail.db /data/openavail.db'
+docker compose up -d
+```
+
+Points to get right when migrating:
+
+- **Keep `ADMIN_EMAIL` the same** as before — admin is derived from this email matching a user, so
+  changing it would drop your admin rights on the migrated data.
+- **`GOOGLE_CLIENT_ID`** can stay the same or change; if it changes, add the new domain to the
+  OAuth **Authorized JavaScript origins** (step 3).
+- **`PUBLIC_URL`** should be the new site's HTTPS URL so freshly created invite links are correct
+  (existing sessions are cookie-bound to the old origin and will need a re-login on the new host).
+- Copy the file in **while the app is stopped** to avoid writing over a live database.
+
+After starting, sign in as the admin and confirm your votes/members/polls are all present.
+
+The SQLite schema is additive (`CREATE TABLE IF NOT EXISTS`), so a newer build reads an older
+database as-is. Downgrading to an *older* build on a newer database is not supported — restore a
+matching backup instead.
 
 ---
 
