@@ -204,4 +204,25 @@
   .muted {
     color: var(--muted);
   }
+
+  @media (max-width: 720px) {
+    .controls {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 14px;
+    }
+    .group {
+      justify-content: flex-start;
+    }
+    .range input {
+      flex: 1;
+      min-width: 0;
+    }
+    .seg {
+      width: 100%;
+    }
+    .seg-btn {
+      flex: 1;
+    }
+  }
 </style>

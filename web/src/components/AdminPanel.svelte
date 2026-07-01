@@ -283,4 +283,24 @@
     color: var(--no-ink);
     font-weight: 700;
   }
+
+  @media (max-width: 620px) {
+    .modal {
+      padding: 16px;
+    }
+    .sec-head {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .row {
+      flex-wrap: wrap;
+    }
+    .url {
+      flex-basis: 100%;
+      order: 3;
+    }
+    .exp {
+      font-size: 12px;
+    }
+  }
 </style>

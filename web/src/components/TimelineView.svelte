@@ -228,4 +228,22 @@
   .vote.empty {
     background: white;
   }
+
+  @media (max-width: 620px) {
+    .timeline {
+      padding: 12px;
+    }
+    .toolbar {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+    }
+    .names {
+      flex-basis: 118px;
+      width: 118px;
+    }
+    .grid-scroll {
+      max-height: 66vh;
+    }
+  }
 </style>
