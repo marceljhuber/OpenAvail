@@ -40,7 +40,8 @@ export const filters = writable<Filters>({
   view: "calendar",
 });
 
-let pollTimer: ReturnType<typeof setInterval> | null = null;
+let eventSource: EventSource | null = null;
+let fallbackTimer: ReturnType<typeof setInterval> | null = null;
 
 /** Load public config + existing session on boot. */
 export async function initApp(): Promise<void> {
@@ -51,7 +52,7 @@ export async function initApp(): Promise<void> {
     session.set(user);
     if (user) {
       await Promise.all([refreshBoard(), refreshPolls()]);
-      startPolling();
+      startLive();
     }
   } finally {
     loading.set(false);
@@ -85,21 +86,38 @@ export async function deletePoll(id: string): Promise<void> {
   polls.update((list) => list.filter((p) => p.id !== id));
 }
 
-export function startPolling(intervalMs = 10000): void {
-  stopPolling();
-  pollTimer = setInterval(() => {
-    refreshBoard().catch(() => {
-      /* transient; next tick retries */
-    });
-    refreshPolls().catch(() => {
-      /* transient; next tick retries */
-    });
-  }, intervalMs);
+function refreshAll(): void {
+  refreshBoard().catch(() => {});
+  refreshPolls().catch(() => {});
 }
 
-export function stopPolling(): void {
-  if (pollTimer) clearInterval(pollTimer);
-  pollTimer = null;
+/** Live updates via Server-Sent Events, with a slow safety poll as fallback
+ * (in case a proxy buffers SSE or an event is missed). */
+export function startLive(): void {
+  stopLive();
+  try {
+    eventSource = new EventSource("/api/events");
+    eventSource.onmessage = (e) => {
+      try {
+        const { channel } = JSON.parse(e.data) as { channel: string };
+        if (channel === "board") refreshBoard().catch(() => {});
+        else if (channel === "polls") refreshPolls().catch(() => {});
+      } catch {
+        /* ignore malformed frames */
+      }
+    };
+    // EventSource reconnects automatically on error; nothing to do here.
+  } catch {
+    /* SSE unsupported — the fallback timer still keeps things fresh */
+  }
+  fallbackTimer = setInterval(refreshAll, 45000);
+}
+
+export function stopLive(): void {
+  eventSource?.close();
+  eventSource = null;
+  if (fallbackTimer) clearInterval(fallbackTimer);
+  fallbackTimer = null;
 }
 
 export async function login(credential: string, invite?: string): Promise<User> {
@@ -115,12 +133,12 @@ export async function loginDev(name: string, email?: string): Promise<User> {
 async function afterLogin(user: User): Promise<User> {
   session.set(user);
   await Promise.all([refreshBoard(), refreshPolls()]);
-  startPolling();
+  startLive();
   return user;
 }
 
 export async function logout(): Promise<void> {
-  stopPolling();
+  stopLive();
   await api.logout();
   session.set(null);
   board.set(emptyBoard);

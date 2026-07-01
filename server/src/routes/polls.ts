@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { requireUser } from "../app.js";
+import { bus } from "../events.js";
 import {
   buildAllPollViews,
   buildPollView,
@@ -42,6 +43,7 @@ export function registerPollRoutes(app: FastifyInstance): void {
 
     const now = new Date().toISOString();
     const id = createPoll(app.db, { title: cleanTitle, options: cleanOptions, createdBy: req.user!.id }, now);
+    bus.publish("polls");
     return buildPollView(app.db, getPoll(app.db, id)!, req.user!);
   });
 
@@ -53,6 +55,7 @@ export function registerPollRoutes(app: FastifyInstance): void {
     const { optionIds } = (req.body ?? {}) as VoteBody;
     const ids = Array.isArray(optionIds) ? optionIds.filter((x): x is string => typeof x === "string") : [];
     setUserVotes(app.db, id, req.user!.id, ids, new Date().toISOString());
+    bus.publish("polls");
     return buildPollView(app.db, poll, req.user!);
   });
 
@@ -63,6 +66,7 @@ export function registerPollRoutes(app: FastifyInstance): void {
     const canManage = req.user!.role === "admin" || poll.createdBy === req.user!.id;
     if (!canManage) return reply.code(403).send({ error: "Only the creator or an admin can delete this." });
     deletePoll(app.db, id);
+    bus.publish("polls");
     return { ok: true };
   });
 }

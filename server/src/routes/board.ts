@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { requireUser } from "../app.js";
 import { applyVote, buildState, isIsoDate } from "../board.js";
+import { bus } from "../events.js";
 import type { Vote } from "../types.js";
 
 const VOTES: Vote[] = ["yes", "maybe", "no"];
@@ -30,6 +31,7 @@ export function registerBoardRoutes(app: FastifyInstance): void {
     }
     const now = new Date().toISOString();
     const result = applyVote(app.db, req.user!, date, vote ?? null, now);
+    bus.publish("board");
     return { date, ...result };
   });
 }

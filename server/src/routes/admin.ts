@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { config } from "../config.js";
 import { requireAdmin } from "../app.js";
 import { makeInviteToken } from "../auth.js";
+import { bus } from "../events.js";
 import {
   createInvite,
   deleteUser,
@@ -63,6 +64,7 @@ export function registerAdminRoutes(app: FastifyInstance): void {
       return reply.code(400).send({ error: "Cannot remove an admin." });
     }
     deleteUser(app.db, id);
+    bus.publish("board");
     return { ok: true };
   });
 }
