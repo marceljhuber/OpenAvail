@@ -5,7 +5,7 @@ import type { AppConfig, BoardState, PollView, User, Vote } from "./types";
 
 export type ViewKind = "calendar" | "timeline";
 export type Theme = "light" | "dark";
-export type SortKey = "date" | "yes" | "total" | "maybe" | "focus";
+export type SortKey = "date" | "yes" | "total" | "maybe" | "no" | "focus";
 
 export interface Filters {
   rangeFrom: string;
@@ -40,12 +40,12 @@ const THEME_KEY = "openavail-theme";
 
 /** Apply the saved theme, or the OS preference on first visit. Call before mount. */
 export function initTheme(): void {
-  let t: Theme = "light";
+  let t: Theme = "light"; // default is day/light unless the user chose dark
   try {
     const saved = localStorage.getItem(THEME_KEY) as Theme | null;
-    t = saved ?? (window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    if (saved === "dark" || saved === "light") t = saved;
   } catch {
-    /* storage/matchMedia unavailable */
+    /* storage unavailable */
   }
   setTheme(t);
 }

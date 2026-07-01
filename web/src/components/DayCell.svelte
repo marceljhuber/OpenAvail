@@ -86,10 +86,15 @@
     border: 1px solid var(--line);
     border-radius: 16px;
     padding: 10px;
-    background:
-      linear-gradient(rgba(32, 178, 107, var(--yes-alpha, 0)), rgba(32, 178, 107, var(--yes-alpha, 0))),
-      var(--surface-a);
-    transition: opacity 0.15s, outline-color 0.15s;
+    /* blend the "yes" tint into the surface so text stays readable in both
+       light and dark themes (a translucent bright-green overlay washed out
+       text in dark mode) */
+    background: color-mix(
+      in srgb,
+      var(--yes) calc(var(--yes-alpha, 0) * 100%),
+      var(--surface)
+    );
+    transition: opacity 0.15s, outline-color 0.15s, background 0.15s;
   }
   .day-cell.top-day {
     outline: 3px solid rgba(32, 178, 107, 0.28);

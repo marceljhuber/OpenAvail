@@ -76,6 +76,10 @@ Open <http://localhost:5173> and sign in with your `ADMIN_EMAIL` Google account.
 
 ## 4. Deploy (single container)
 
+> 📖 **Full walkthrough:** [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md) covers a complete
+> VPS/homelab setup — domain/DuckDNS, Docker, Google OAuth origins, Caddy HTTPS, updates and
+> backups. The summary below is the short version.
+
 The Node server can serve both the API and the built SPA, so production is one container.
 
 ```bash

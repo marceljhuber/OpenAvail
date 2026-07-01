@@ -41,6 +41,8 @@ function sortValue(votes: VotesByDate, iso: string, sortBy: SortKey, f: Filters)
       return s.total;
     case "maybe":
       return s.maybe;
+    case "no":
+      return s.no;
     case "focus":
       return focusYesCount(votes, iso, f.focusMembers, f.focusVote);
     default:

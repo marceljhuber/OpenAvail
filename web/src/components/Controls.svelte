@@ -36,6 +36,7 @@
     { key: "yes", label: "Most yes" },
     { key: "total", label: "Most responses" },
     { key: "maybe", label: "Most maybe" },
+    { key: "no", label: "Most no" },
   ];
 </script>
 
