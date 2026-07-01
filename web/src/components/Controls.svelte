@@ -90,6 +90,7 @@
     {/if}
   </div>
 
+  {#if $filters.view === "timeline"}
   <div class="group sort">
     <span class="lab">Sort</span>
     <div class="seg">
@@ -115,6 +116,7 @@
       {/if}
     </div>
   </div>
+  {/if}
 </section>
 
 <style>

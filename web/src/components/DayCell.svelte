@@ -46,7 +46,9 @@
 >
   <div class="day-head">
     <span class="date-number" data-weekday={WEEKDAYS[mondayBasedDay(date)]}>{date.getDate()}</span>
-    <span class="yes-score">{summary.yes}/{members.length} yes</span>
+    <span class="yes-score" title="{summary.yes} of {members.length} said yes">
+      {summary.yes}/{members.length}
+    </span>
   </div>
   <div class="counts">
     <span class="pill yes">{summary.yes}</span>
@@ -90,26 +92,33 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
+    gap: 6px;
+    min-width: 0;
   }
   .date-number {
     display: grid;
     place-items: center;
-    min-width: 32px;
+    min-width: 30px;
     height: 30px;
     padding: 0 6px;
     border-radius: 10px;
     background: #f2eadc;
     font-weight: 900;
+    flex: 0 0 auto;
   }
   .yes-score {
     color: var(--yes-ink);
     font-weight: 800;
     font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
   }
   .counts {
     display: flex;
-    gap: 6px;
+    flex-wrap: wrap;
+    gap: 5px;
   }
   .voter-list {
     flex: 1;

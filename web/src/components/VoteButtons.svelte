@@ -26,20 +26,24 @@
 </div>
 
 <style>
+  /* flex-wrap so buttons reflow (never clip "Maybe") when the cell is narrow */
   .vote-buttons {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
   }
   .vb {
-    min-height: 32px;
+    flex: 1 1 44px;
+    min-width: 0;
+    min-height: 30px;
     padding: 0 6px;
     border: 0;
-    border-radius: 11px;
+    border-radius: 10px;
     color: var(--muted);
     background: #f7f2e9;
     font-size: 12px;
     font-weight: 800;
+    white-space: nowrap;
   }
   .vb.active.yes {
     color: white;

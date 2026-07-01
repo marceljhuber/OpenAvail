@@ -31,9 +31,14 @@
   const leftSpacer = $derived(startIndex * COL_W);
   const rightSpacer = $derived(Math.max(0, (total - endIndex) * COL_W));
 
-  // sorted by date for display order indicator? keep array order from sortDays.
   function isMonthStart(d: Date): boolean {
     return d.getDate() === 1;
+  }
+
+  // Distinct light hue per calendar month so columns stay groupable even when
+  // sorted out of date order.
+  function monthHue(d: Date): number {
+    return ((d.getFullYear() * 12 + d.getMonth()) * 53) % 360;
   }
 
   function voteOf(memberId: string, iso: string): Vote | undefined {
@@ -77,10 +82,8 @@
           {@const iso = toISO(day)}
           {@const s = summarizeDay($board.votes, iso)}
           <div class="col" class:month-start={isMonthStart(day)} style="width:{COL_W}px">
-            <div class="cell head day" title={formatLongDate(day)}>
-              {#if isMonthStart(day)}
-                <span class="mon">{day.toLocaleDateString(undefined, { month: "short" })}</span>
-              {/if}
+            <div class="cell head day" style="--mh:{monthHue(day)}" title={formatLongDate(day)}>
+              <span class="mon">{day.toLocaleDateString(undefined, { month: "short" })}</span>
               <span class="dnum">{day.getDate()}</span>
               <span class="dow">{day.toLocaleDateString(undefined, { weekday: "narrow" })}</span>
             </div>
@@ -158,13 +161,25 @@
     font-weight: 800;
   }
   .cell.head {
-    height: 52px;
+    height: 56px;
     position: sticky;
     top: 0;
     z-index: 2;
     background: #fffaf0;
     flex-direction: column;
-    gap: 1px;
+    gap: 0;
+  }
+  /* per-month tinted day header (readable even when sorted out of date order) */
+  .col .cell.head.day {
+    background: hsl(var(--mh, 40) 55% 94%);
+    border-bottom: 2px solid hsl(var(--mh, 40) 45% 82%);
+  }
+  .day .mon {
+    color: hsl(var(--mh, 40) 45% 34%);
+    font-size: 10px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
   }
   .names .corner {
     z-index: 4;
@@ -197,13 +212,9 @@
     color: var(--muted);
     background: #f7f2e9;
   }
-  .day .mon {
-    color: var(--maybe-ink);
-    font-size: 10px;
-    text-transform: uppercase;
-  }
   .day .dnum {
     font-size: 13px;
+    font-weight: 800;
   }
   .day .dow {
     color: var(--muted);

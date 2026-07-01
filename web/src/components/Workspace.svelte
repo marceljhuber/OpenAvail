@@ -124,7 +124,7 @@
   /* votings rail (left) + main content (right) */
   .body {
     display: grid;
-    grid-template-columns: 340px minmax(0, 1fr);
+    grid-template-columns: 320px minmax(0, 1fr);
     gap: 14px;
     align-items: start;
   }
@@ -159,7 +159,7 @@
   /* calendar + stats sidebar (right) */
   .cal-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 300px;
+    grid-template-columns: minmax(0, 1fr) 280px;
     gap: 14px;
     align-items: start;
   }

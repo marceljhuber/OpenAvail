@@ -126,7 +126,7 @@
   .weekday-grid,
   .days-grid {
     display: grid;
-    grid-template-columns: repeat(7, minmax(92px, 1fr));
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 8px;
   }
   .weekday {
