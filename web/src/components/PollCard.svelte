@@ -4,41 +4,37 @@
 
   let { poll }: { poll: PollView } = $props();
 
-  // Local editable selection. Resync from the server only when the server's
-  // value actually changes (initial load, or another device); an in-progress
-  // edit is preserved across the 10s poll refresh because the signature is
-  // unchanged then.
+  // Local editable selection; resynced from the server only when the server
+  // value actually changes and nothing is in flight (avoids clobbering clicks).
   let selected = $state<Set<string>>(new Set());
-  let busy = $state(false);
   let lastSig = "";
+  let pending = 0;
+  let saving = $state(false);
 
   $effect(() => {
     const sig = `${poll.id}|${[...poll.myVotes].sort().join(",")}`;
-    if (sig !== lastSig) {
+    if (pending === 0 && sig !== lastSig) {
       lastSig = sig;
       selected = new Set(poll.myVotes);
     }
   });
 
-  const myVotesSet = $derived(new Set(poll.myVotes));
-  const changed = $derived(
-    selected.size !== myVotesSet.size || [...selected].some((id) => !myVotesSet.has(id)),
-  );
   const maxVotes = $derived(Math.max(1, ...poll.options.map((o) => o.votes ?? 0)));
 
-  function toggle(id: string) {
+  // Auto-submit: clicking an option toggles it and persists immediately.
+  async function toggle(id: string) {
     const next = new Set(selected);
     if (next.has(id)) next.delete(id);
     else next.add(id);
     selected = next;
-  }
 
-  async function submit() {
-    busy = true;
+    pending += 1;
+    saving = true;
     try {
-      await votePoll(poll.id, [...selected]);
+      await votePoll(poll.id, [...next]);
     } finally {
-      busy = false;
+      pending -= 1;
+      if (pending === 0) saving = false;
     }
   }
 
@@ -47,19 +43,23 @@
   }
 </script>
 
-<article class="poll panel">
+<article class="poll">
   <header>
-    <div>
+    <div class="titles">
       <h3>{poll.title}</h3>
-      <p class="meta">by {poll.createdByName}</p>
+      <p class="meta">
+        by {poll.createdByName}
+        {#if poll.revealed}· {poll.totalVoters} voter{poll.totalVoters === 1 ? "" : "s"}{/if}
+        {#if saving}· <span class="saving">saving…</span>{/if}
+      </p>
     </div>
     {#if poll.canManage}
-      <button class="del" onclick={onDelete} aria-label="Delete voting">✕</button>
+      <button class="del" onclick={onDelete} aria-label="Delete voting" title="Delete voting">✕</button>
     {/if}
   </header>
 
   {#if !poll.revealed}
-    <p class="blind">🔒 Pick your option(s) and submit to reveal the standings.</p>
+    <p class="blind">🔒 Tap an option to vote — results reveal once you do.</p>
   {/if}
 
   <ul class="options">
@@ -72,62 +72,61 @@
           {#if poll.revealed}
             <span class="count">{opt.votes}</span>
           {/if}
+          {#if poll.revealed}
+            <span class="bar" style="--w:{((opt.votes ?? 0) / maxVotes) * 100}%"></span>
+          {/if}
         </button>
-        {#if poll.revealed}
-          <div class="bar"><span style="width:{((opt.votes ?? 0) / maxVotes) * 100}%"></span></div>
-        {/if}
       </li>
     {/each}
   </ul>
-
-  <footer>
-    {#if poll.revealed}
-      <span class="muted">{poll.totalVoters} voter{poll.totalVoters === 1 ? "" : "s"}</span>
-      <button class="btn" onclick={submit} disabled={!changed || busy}>
-        {busy ? "Saving…" : "Update vote"}
-      </button>
-    {:else}
-      <span class="muted">Results hidden until you vote</span>
-      <button class="btn" onclick={submit} disabled={selected.size === 0 || busy}>
-        {busy ? "Saving…" : "Submit vote"}
-      </button>
-    {/if}
-  </footer>
 </article>
 
 <style>
   .poll {
-    padding: 18px;
+    padding: 16px;
     display: grid;
-    gap: 14px;
+    gap: 12px;
     align-content: start;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: white;
   }
   header {
     display: flex;
     justify-content: space-between;
-    gap: 12px;
+    gap: 10px;
+  }
+  .titles {
+    min-width: 0;
   }
   h3 {
-    font-size: 18px;
+    font-size: 16px;
+    overflow-wrap: anywhere;
   }
   .meta {
-    margin: 4px 0 0;
+    margin: 3px 0 0;
     color: var(--muted);
     font-size: 12px;
   }
+  .saving {
+    color: var(--yes-ink);
+    font-weight: 700;
+  }
   .del {
+    flex: 0 0 auto;
     border: 0;
     background: transparent;
     color: var(--muted);
-    font-size: 15px;
+    font-size: 14px;
+    align-self: start;
   }
   .blind {
     margin: 0;
     color: var(--maybe-ink);
     background: var(--maybe-soft);
-    border-radius: 12px;
-    padding: 9px 12px;
-    font-size: 13px;
+    border-radius: 11px;
+    padding: 8px 11px;
+    font-size: 12.5px;
     font-weight: 700;
   }
   .options {
@@ -135,26 +134,42 @@
     margin: 0;
     padding: 0;
     display: grid;
-    gap: 8px;
+    gap: 7px;
   }
   .opt {
+    position: relative;
     width: 100%;
     display: flex;
     align-items: center;
     gap: 10px;
-    min-height: 44px;
+    min-height: 42px;
     padding: 0 12px;
     border: 1px solid var(--line);
-    border-radius: 13px;
+    border-radius: 12px;
     background: white;
     color: var(--ink);
     font-weight: 700;
     text-align: left;
+    overflow: hidden;
+  }
+  /* result bar sits behind the label */
+  .bar {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: var(--w, 0%);
+    background: var(--yes-soft);
+    z-index: 0;
+    transition: width 0.25s;
+  }
+  .opt > :not(.bar) {
+    position: relative;
+    z-index: 1;
   }
   .opt.on {
     border-color: var(--yes);
-    background: var(--yes-soft);
-    color: var(--yes-ink);
+  }
+  .opt.on .bar {
+    background: color-mix(in srgb, var(--yes) 26%, white);
   }
   .check {
     display: grid;
@@ -166,38 +181,19 @@
     background: white;
     font-size: 13px;
     color: var(--yes-ink);
+    flex: 0 0 auto;
   }
   .opt.on .check {
     border-color: var(--yes);
+    background: var(--yes);
+    color: white;
   }
   .label {
     flex: 1;
+    overflow-wrap: anywhere;
   }
   .count {
     font-variant-numeric: tabular-nums;
-    color: var(--ink);
-  }
-  .bar {
-    height: 6px;
-    margin-top: 5px;
-    border-radius: 999px;
-    background: #eee7dc;
-    overflow: hidden;
-  }
-  .bar span {
-    display: block;
-    height: 100%;
-    background: var(--yes);
-    transition: width 0.25s;
-  }
-  footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-  }
-  .muted {
-    color: var(--muted);
-    font-size: 13px;
+    font-weight: 900;
   }
 </style>

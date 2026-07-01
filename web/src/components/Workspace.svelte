@@ -5,7 +5,7 @@
   import TimelineView from "./TimelineView.svelte";
   import Sidebar from "./Sidebar.svelte";
   import Controls from "./Controls.svelte";
-  import PollsView from "./PollsView.svelte";
+  import VotingsPanel from "./VotingsPanel.svelte";
   import AdminPanel from "./AdminPanel.svelte";
 
   let adminOpen = $state(false);
@@ -43,54 +43,50 @@
     <AdminPanel onClose={() => (adminOpen = false)} />
   {/if}
 
-  <div class="tabbar">
-    <div class="tabs panel">
-      <button class="tab" class:active={$filters.view === "calendar"} onclick={() => setView("calendar")}>
-        Calendar
-      </button>
-      <button class="tab" class:active={$filters.view === "timeline"} onclick={() => setView("timeline")}>
-        Timeline
-      </button>
-      <button class="tab" class:active={$filters.view === "votings"} onclick={() => setView("votings")}>
-        Votings
-      </button>
+  <div class="body">
+    <VotingsPanel />
+
+    <div class="mainarea">
+      <div class="bar">
+        <div class="tabs panel">
+          <button class="tab" class:active={$filters.view === "calendar"} onclick={() => setView("calendar")}>
+            Calendar
+          </button>
+          <button class="tab" class:active={$filters.view === "timeline"} onclick={() => setView("timeline")}>
+            Timeline
+          </button>
+        </div>
+      </div>
+
+      <Controls />
+
+      {#if $filters.view === "calendar"}
+        <div class="cal-grid">
+          <CalendarView />
+          <Sidebar />
+        </div>
+      {:else}
+        <TimelineView />
+      {/if}
     </div>
   </div>
-
-  {#if $filters.view !== "votings"}
-    <Controls />
-  {/if}
-
-  {#if $filters.view === "calendar"}
-    <main class="calendar-layout">
-      <Sidebar />
-      <CalendarView />
-    </main>
-  {:else if $filters.view === "timeline"}
-    <main>
-      <TimelineView />
-    </main>
-  {:else}
-    <main>
-      <PollsView />
-    </main>
-  {/if}
 </div>
 
 <style>
   .shell {
-    width: min(1440px, 100%);
+    width: min(1560px, 100%);
     margin: 0 auto;
-    padding: 18px;
+    padding: 16px;
     display: grid;
-    gap: 16px;
+    gap: 14px;
   }
   .topbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
-    padding: 14px 18px;
+    gap: 12px;
+    padding: 12px 16px;
+    flex-wrap: wrap;
   }
   .brand {
     display: flex;
@@ -101,9 +97,9 @@
   .mark {
     display: grid;
     place-items: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 12px;
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
     color: white;
     background: #17201d;
     font-size: 13px;
@@ -111,8 +107,9 @@
   .session {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     color: var(--muted);
+    flex-wrap: wrap;
   }
   .avatar {
     width: 30px;
@@ -122,6 +119,22 @@
   .who {
     font-weight: 700;
     color: var(--ink);
+  }
+
+  /* votings rail (left) + main content (right) */
+  .body {
+    display: grid;
+    grid-template-columns: 340px minmax(0, 1fr);
+    gap: 14px;
+    align-items: start;
+  }
+  .mainarea {
+    display: grid;
+    gap: 14px;
+    min-width: 0;
+  }
+  .bar {
+    display: flex;
   }
   .tabs {
     display: flex;
@@ -142,15 +155,48 @@
     color: white;
     background: #17201d;
   }
-  .calendar-layout {
+
+  /* calendar + stats sidebar (right) */
+  .cal-grid {
     display: grid;
-    grid-template-columns: 320px minmax(0, 1fr);
-    gap: 16px;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 14px;
     align-items: start;
   }
-  @media (max-width: 980px) {
-    .calendar-layout {
+
+  @media (max-width: 1200px) {
+    .cal-grid {
       grid-template-columns: 1fr;
+    }
+  }
+
+  /* stack the votings rail below the main content on narrower screens so the
+     7-column calendar keeps room */
+  @media (max-width: 1100px) {
+    .body {
+      grid-template-columns: 1fr;
+    }
+    .mainarea {
+      order: 1;
+    }
+    :global(.body > .votings) {
+      order: 2;
+    }
+  }
+
+  @media (max-width: 620px) {
+    .shell {
+      padding: 10px;
+      gap: 10px;
+    }
+    .topbar {
+      padding: 10px 12px;
+    }
+    .tabs {
+      width: 100%;
+    }
+    .tab {
+      flex: 1;
     }
   }
 </style>

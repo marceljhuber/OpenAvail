@@ -3,7 +3,7 @@ import { api } from "./api";
 import { addMonths, daysInMonth, startOfMonth, toISO } from "./date";
 import type { AppConfig, BoardState, PollView, User, Vote } from "./types";
 
-export type ViewKind = "calendar" | "timeline" | "votings";
+export type ViewKind = "calendar" | "timeline";
 export type SortKey = "date" | "yes" | "total" | "maybe" | "focus";
 
 export interface Filters {

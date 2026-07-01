@@ -1,0 +1,234 @@
+<script lang="ts">
+  import { polls, createPoll } from "../lib/stores";
+  import PollCard from "./PollCard.svelte";
+
+  const DEFAULTS = ["Pokemon Day", "One Piece Day", "Friends Day"];
+
+  let creating = $state(false);
+  let title = $state("");
+  let options = $state<string[]>([...DEFAULTS]);
+  let touched = $state<boolean[]>(DEFAULTS.map(() => false));
+  let busy = $state(false);
+  let error = $state<string | null>(null);
+
+  const canStart = $derived(title.trim().length > 0 && options.some((o) => o.trim().length > 0));
+
+  function isGhost(i: number): boolean {
+    return !touched[i] && options[i] === DEFAULTS[i];
+  }
+
+  function markTouched(i: number) {
+    if (!touched[i]) {
+      const next = [...touched];
+      next[i] = true;
+      touched = next;
+    }
+  }
+
+  function addOption() {
+    options = [...options, ""];
+    touched = [...touched, true];
+  }
+  function removeOption(i: number) {
+    options = options.filter((_, idx) => idx !== i);
+    touched = touched.filter((_, idx) => idx !== i);
+  }
+
+  function reset() {
+    title = "";
+    options = [...DEFAULTS];
+    touched = DEFAULTS.map(() => false);
+    error = null;
+  }
+
+  async function start() {
+    if (!canStart) return;
+    busy = true;
+    error = null;
+    try {
+      await createPoll(
+        title.trim(),
+        options.map((o) => o.trim()).filter((o) => o.length > 0),
+      );
+      reset();
+      creating = false;
+    } catch (e) {
+      error = e instanceof Error ? e.message : "Could not start the voting.";
+    } finally {
+      busy = false;
+    }
+  }
+</script>
+
+<aside class="votings panel">
+  <div class="head">
+    <h2>Votings</h2>
+    {#if !creating}
+      <button class="btn sm" onclick={() => (creating = true)}>+ New</button>
+    {/if}
+  </div>
+
+  {#if creating}
+    <div class="create">
+      <label class="field">
+        <span>Title</span>
+        <input placeholder="e.g. 25.07. Day?" bind:value={title} />
+      </label>
+
+      <div class="field">
+        <span>Options</span>
+        <div class="opt-list">
+          {#each options as _, i (i)}
+            <div class="opt-row">
+              <input
+                class:ghost={isGhost(i)}
+                placeholder={`Option ${i + 1}`}
+                bind:value={options[i]}
+                oninput={() => markTouched(i)}
+                onfocus={(e) => isGhost(i) && e.currentTarget.select()}
+              />
+              <button
+                class="rm"
+                type="button"
+                onclick={() => removeOption(i)}
+                disabled={options.length <= 1}
+                aria-label="Remove option"
+              >
+                ✕
+              </button>
+            </div>
+          {/each}
+        </div>
+        <button class="add" type="button" onclick={addOption}>+ Add option</button>
+      </div>
+
+      {#if error}<p class="error">{error}</p>{/if}
+
+      <div class="actions">
+        <button class="btn ghost-btn" onclick={() => { reset(); creating = false; }}>Cancel</button>
+        <button class="btn" onclick={start} disabled={!canStart || busy}>
+          {busy ? "Starting…" : "Start voting"}
+        </button>
+      </div>
+      <p class="hint">Multiple choice · results hidden until each person votes.</p>
+    </div>
+  {/if}
+
+  <div class="list">
+    {#if $polls.length === 0}
+      <p class="empty">No votings yet. Tap <strong>+ New</strong> to start one.</p>
+    {:else}
+      {#each $polls as poll (poll.id)}
+        <PollCard {poll} />
+      {/each}
+    {/if}
+  </div>
+</aside>
+
+<style>
+  .votings {
+    padding: 16px;
+    display: grid;
+    gap: 14px;
+    align-content: start;
+  }
+  .head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .head h2 {
+    font-size: 20px;
+  }
+  .btn.sm {
+    min-height: 34px;
+    padding: 0 12px;
+    font-size: 13px;
+  }
+  .create {
+    display: grid;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.6);
+  }
+  .field {
+    display: grid;
+    gap: 7px;
+  }
+  .field > span {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .opt-list {
+    display: grid;
+    gap: 7px;
+  }
+  .opt-row {
+    display: flex;
+    gap: 7px;
+  }
+  .opt-row input {
+    flex: 1;
+    min-width: 0;
+  }
+  /* editable default shown as grayed ghost text until touched */
+  input.ghost {
+    color: var(--muted);
+    font-style: italic;
+    opacity: 0.7;
+  }
+  .rm {
+    width: 38px;
+    flex: 0 0 auto;
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    background: white;
+    color: var(--no-ink);
+  }
+  .rm:disabled {
+    opacity: 0.4;
+  }
+  .add {
+    justify-self: start;
+    border: 1px dashed var(--line);
+    border-radius: 11px;
+    background: transparent;
+    color: var(--muted);
+    min-height: 34px;
+    padding: 0 12px;
+    font-weight: 800;
+  }
+  .actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+  .ghost-btn {
+    background: white;
+    color: var(--ink);
+    border: 1px solid var(--line);
+  }
+  .hint {
+    margin: 0;
+    color: var(--muted);
+    font-size: 11.5px;
+  }
+  .error {
+    margin: 0;
+    color: var(--no-ink);
+    font-weight: 700;
+  }
+  .list {
+    display: grid;
+    gap: 12px;
+  }
+  .empty {
+    color: var(--muted);
+    font-size: 13px;
+  }
+</style>
