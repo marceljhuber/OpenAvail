@@ -88,7 +88,7 @@
     padding: 10px;
     background:
       linear-gradient(rgba(32, 178, 107, var(--yes-alpha, 0)), rgba(32, 178, 107, var(--yes-alpha, 0))),
-      rgba(255, 255, 255, 0.9);
+      var(--surface-a);
     transition: opacity 0.15s, outline-color 0.15s;
   }
   .day-cell.top-day {
@@ -114,7 +114,7 @@
     height: 30px;
     padding: 0 6px;
     border-radius: 10px;
-    background: #f2eadc;
+    background: var(--chip);
     font-weight: 900;
     flex: 0 0 auto;
   }

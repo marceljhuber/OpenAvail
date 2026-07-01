@@ -21,6 +21,9 @@ join through a time-limited invite link, sign in with Google, and vote on an inf
 - 🔎 **Filter & sort by member** — e.g. *"only days where Rainer voted yes, ranked by most yes"*.
 - 🗳️ **Votings** — multiple-choice polls (e.g. "25.07. Day?" → Pokémon Day / One Piece Day / …)
   whose results stay **hidden until you vote**, then reveal and stay editable. Run several at once.
+- 💬 **Per-day comments** — leave notes on any day ("can't do mornings").
+- ⚡ **Live updates** — votes, polls and comments appear instantly via Server-Sent Events.
+- 🌙 **Dark mode** — follows your OS preference, toggle to override.
 - 🪶 **Cheap to host** — Node + SQLite (single file), one small container.
 
 ## Tech stack
@@ -127,6 +130,12 @@ web/      Svelte + Vite frontend  → builds to web/dist/
 server/   Fastify API + SQLite     → builds to server/dist/
 deploy/   Dockerfile, docker-compose, Caddyfile
 ```
+
+## Notes
+
+- **Dates & timezone:** a day is a whole-day calendar date (`YYYY-MM-DD`), with no time
+  component, which suits a single-timezone group (built for **Europe/Vienna**). There are no
+  timezone conversions — everyone sees the same day.
 
 ## Security notes
 

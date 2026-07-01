@@ -151,7 +151,7 @@
     padding: 14px;
     border: 1px solid var(--line);
     border-radius: 16px;
-    background: rgba(255, 255, 255, 0.6);
+    background: var(--surface-a);
   }
   .field {
     display: grid;
@@ -187,7 +187,7 @@
     flex: 0 0 auto;
     border: 1px solid var(--line);
     border-radius: 11px;
-    background: white;
+    background: var(--surface);
     color: var(--no-ink);
   }
   .rm:disabled {
@@ -209,7 +209,7 @@
     justify-content: flex-end;
   }
   .ghost-btn {
-    background: white;
+    background: var(--surface);
     color: var(--ink);
     border: 1px solid var(--line);
   }

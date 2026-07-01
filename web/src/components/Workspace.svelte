@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { appConfig, session, filters, selectedDay, logout } from "../lib/stores";
+  import { appConfig, session, filters, selectedDay, theme, toggleTheme, logout } from "../lib/stores";
   import type { ViewKind } from "../lib/stores";
   import DayModal from "./DayModal.svelte";
   import CalendarView from "./CalendarView.svelte";
@@ -27,6 +27,14 @@
       <span class="name">{$appConfig?.ownerName ?? ""}'s OpenAvail</span>
     </div>
     <div class="session">
+      <button
+        class="btn secondary icon"
+        onclick={toggleTheme}
+        title="Toggle dark mode"
+        aria-label="Toggle dark mode"
+      >
+        {$theme === "dark" ? "☀️" : "🌙"}
+      </button>
       {#if $session}
         {#if $session.picture}
           <img class="avatar" src={$session.picture} alt="" referrerpolicy="no-referrer" />
@@ -105,8 +113,8 @@
     width: 34px;
     height: 34px;
     border-radius: 11px;
-    color: white;
-    background: #17201d;
+    color: var(--btn-fg);
+    background: var(--btn);
     font-size: 13px;
   }
   .session {
@@ -115,6 +123,10 @@
     gap: 8px;
     color: var(--muted);
     flex-wrap: wrap;
+  }
+  .btn.icon {
+    padding: 0 10px;
+    font-size: 15px;
   }
   .avatar {
     width: 30px;
@@ -157,8 +169,8 @@
     font-weight: 800;
   }
   .tab.active {
-    color: white;
-    background: #17201d;
+    color: var(--btn-fg);
+    background: var(--btn);
   }
 
   /* calendar + stats sidebar (right) */

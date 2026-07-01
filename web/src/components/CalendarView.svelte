@@ -109,7 +109,7 @@
     border: 1px solid var(--line);
     border-radius: 22px;
     padding: 16px;
-    background: rgba(255, 255, 255, 0.66);
+    background: var(--surface-a);
   }
   .month-title {
     position: sticky;
@@ -118,7 +118,7 @@
     margin: -16px -16px 12px;
     padding: 14px 16px;
     font-size: 22px;
-    background: linear-gradient(rgba(246, 241, 232, 0.95), rgba(246, 241, 232, 0.82));
+    background: linear-gradient(var(--header), var(--header));
     backdrop-filter: blur(8px);
     border-bottom: 1px solid var(--line);
     border-radius: 22px 22px 0 0;

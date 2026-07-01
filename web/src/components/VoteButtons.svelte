@@ -40,7 +40,7 @@
     border: 0;
     border-radius: 10px;
     color: var(--muted);
-    background: #f7f2e9;
+    background: var(--surface-2);
     font-size: 12px;
     font-weight: 800;
     white-space: nowrap;

@@ -208,7 +208,7 @@
     padding: 10px 12px;
     border: 1px solid var(--line);
     border-radius: 14px;
-    background: white;
+    background: var(--surface);
     font-size: 13px;
   }
   .url {
@@ -256,12 +256,12 @@
     padding: 2px 9px;
     font-size: 11px;
     font-weight: 800;
-    background: #eee7dc;
+    background: var(--empty);
     color: var(--muted);
   }
   .role.admin {
-    color: white;
-    background: #17201d;
+    color: var(--btn-fg);
+    background: var(--btn);
   }
   .link {
     border: 0;

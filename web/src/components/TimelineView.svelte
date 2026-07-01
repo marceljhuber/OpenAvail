@@ -126,7 +126,7 @@
     max-height: 72vh;
     border: 1px solid var(--line);
     border-radius: 16px;
-    background: white;
+    background: var(--surface);
   }
   .grid {
     display: flex;
@@ -139,7 +139,7 @@
     z-index: 3;
     flex: 0 0 168px;
     width: 168px;
-    background: #fffaf0;
+    background: var(--header);
     box-shadow: 2px 0 0 var(--line);
   }
   .col {
@@ -165,7 +165,7 @@
     position: sticky;
     top: 0;
     z-index: 2;
-    background: #fffaf0;
+    background: var(--header);
     flex-direction: column;
     gap: 0;
   }
@@ -206,11 +206,11 @@
   .summary-label {
     color: var(--muted);
     font-size: 11px;
-    background: #f7f2e9;
+    background: var(--surface-2);
   }
   .summary {
     color: var(--muted);
-    background: #f7f2e9;
+    background: var(--surface-2);
   }
   .day .dnum {
     font-size: 13px;
@@ -237,7 +237,7 @@
     background: var(--no);
   }
   .vote.empty {
-    background: white;
+    background: var(--surface);
   }
 
   @media (max-width: 620px) {

@@ -1,5 +1,7 @@
 // Date helpers — ported and extended from the original prototype's app.js.
-// All ISO dates are local-date strings "YYYY-MM-DD" (no timezone surprises).
+// All ISO dates are *local* calendar-date strings "YYYY-MM-DD": a day is a day,
+// with no time component. This suits a single-timezone group (Europe/Vienna);
+// availability is per whole day, so there are no timezone conversions.
 
 export const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 

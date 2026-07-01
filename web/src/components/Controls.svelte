@@ -157,7 +157,7 @@
     border: 1px solid var(--line);
     border-radius: 999px;
     padding: 0 12px;
-    background: white;
+    background: var(--surface);
     color: var(--ink);
     font-size: 13px;
     font-weight: 700;
@@ -184,7 +184,7 @@
     padding: 4px;
     border: 1px solid var(--line);
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.6);
+    background: var(--surface-a);
   }
   .seg-btn {
     min-height: 30px;
@@ -197,8 +197,8 @@
     font-weight: 800;
   }
   .seg-btn.on {
-    color: white;
-    background: #17201d;
+    color: var(--btn-fg);
+    background: var(--btn);
   }
   .seg-btn.accent.on {
     background: var(--yes);

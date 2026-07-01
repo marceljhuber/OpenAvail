@@ -4,6 +4,7 @@ import { addMonths, daysInMonth, startOfMonth, toISO } from "./date";
 import type { AppConfig, BoardState, PollView, User, Vote } from "./types";
 
 export type ViewKind = "calendar" | "timeline";
+export type Theme = "light" | "dark";
 export type SortKey = "date" | "yes" | "total" | "maybe" | "focus";
 
 export interface Filters {
@@ -33,6 +34,35 @@ export const polls = writable<PollView[]>([]);
 export const commentCounts = writable<Record<string, number>>({});
 export const selectedDay = writable<string | null>(null);
 export const loading = writable<boolean>(true);
+export const theme = writable<Theme>("light");
+
+const THEME_KEY = "openavail-theme";
+
+/** Apply the saved theme, or the OS preference on first visit. Call before mount. */
+export function initTheme(): void {
+  let t: Theme = "light";
+  try {
+    const saved = localStorage.getItem(THEME_KEY) as Theme | null;
+    t = saved ?? (window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  } catch {
+    /* storage/matchMedia unavailable */
+  }
+  setTheme(t);
+}
+
+export function setTheme(t: Theme): void {
+  theme.set(t);
+  document.documentElement.setAttribute("data-theme", t);
+  try {
+    localStorage.setItem(THEME_KEY, t);
+  } catch {
+    /* ignore */
+  }
+}
+
+export function toggleTheme(): void {
+  setTheme(get(theme) === "dark" ? "light" : "dark");
+}
 
 export const filters = writable<Filters>({
   ...defaultRange(),

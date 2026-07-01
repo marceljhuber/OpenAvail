@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { appConfig, login, loginDev } from "../lib/stores";
+  import { appConfig, login, loginDev, theme, toggleTheme } from "../lib/stores";
   import { renderGoogleButton } from "../lib/google";
 
   let buttonEl = $state<HTMLDivElement>();
@@ -47,6 +47,15 @@
   });
 </script>
 
+<button
+  class="btn secondary theme-toggle"
+  onclick={toggleTheme}
+  title="Toggle dark mode"
+  aria-label="Toggle dark mode"
+>
+  {$theme === "dark" ? "☀️" : "🌙"}
+</button>
+
 <main class="landing">
   <div class="card panel">
     <div class="brand"><span class="mark">OA</span></div>
@@ -92,6 +101,14 @@
     min-height: 100vh;
     padding: 24px;
   }
+  .theme-toggle {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 10;
+    padding: 0 10px;
+    font-size: 15px;
+  }
   .card {
     width: min(440px, 100%);
     padding: 36px;
@@ -108,8 +125,8 @@
     width: 52px;
     height: 52px;
     border-radius: 16px;
-    color: white;
-    background: #17201d;
+    color: var(--btn-fg);
+    background: var(--btn);
     font-weight: 800;
   }
   .eyebrow {

@@ -89,7 +89,7 @@
     align-content: start;
     border: 1px solid var(--line);
     border-radius: 18px;
-    background: white;
+    background: var(--surface);
   }
   header {
     display: flex;
@@ -146,7 +146,7 @@
     padding: 0 12px;
     border: 1px solid var(--line);
     border-radius: 12px;
-    background: white;
+    background: var(--surface);
     color: var(--ink);
     font-weight: 700;
     text-align: left;
@@ -178,7 +178,7 @@
     height: 22px;
     border-radius: 7px;
     border: 1px solid var(--line);
-    background: white;
+    background: var(--surface);
     font-size: 13px;
     color: var(--yes-ink);
     flex: 0 0 auto;

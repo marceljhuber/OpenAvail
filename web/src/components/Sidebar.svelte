@@ -125,7 +125,7 @@
     padding: 10px 12px;
     border: 1px solid var(--line);
     border-radius: 14px;
-    background: white;
+    background: var(--surface);
   }
   .best strong {
     font-size: 14px;
@@ -140,7 +140,7 @@
     padding: 10px 12px;
     border: 1px solid var(--line);
     border-radius: 14px;
-    background: white;
+    background: var(--surface);
   }
   .change .row {
     display: flex;
@@ -173,7 +173,7 @@
   }
   .tag.none {
     color: var(--muted);
-    background: #eee7dc;
+    background: var(--empty);
   }
   .arrow {
     color: var(--muted);
