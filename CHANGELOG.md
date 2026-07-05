@@ -3,6 +3,19 @@
 A running diary of notable changes. Newest first. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); dates are Europe/Vienna.
 
+## 2026-07-06 (later)
+
+- **Language menu lingers** ~1.6s after the pointer leaves (and toggles on
+  click), so you can move down into the list to pick a language instead of it
+  vanishing on the way.
+- **Calendar day cells** now hide voter names by default and reveal them in the
+  same floating white card (one name per line, coloured vote dot) on hover/focus
+  — matching the votings cards.
+- **Votings**: the "👤" hover affordance no longer repeats the vote count next to
+  it — the number shows once.
+- **Wider default layout**: slimmer votings rail and a larger max width, giving
+  the timeline and the controls above it more room.
+
 ## 2026-07-06
 
 ### Languages (English / German)

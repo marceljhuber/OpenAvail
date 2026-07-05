@@ -206,7 +206,7 @@
                 role="button"
                 aria-label={$t("poll.whoAria", { n: voters.length })}
                 title={$t("poll.whoVoted")}
-              >👤 {voters.length}</span>
+              >👤</span>
             {/if}
             <span class="count">{opt.votes}</span>
             <span class="bar" style="--w:{((opt.votes ?? 0) / maxVotes) * 100}%"></span>

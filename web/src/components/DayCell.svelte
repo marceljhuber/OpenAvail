@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { DaySummary, User, Vote, VotesByDate } from "../lib/types";
-  import { summarizeDay, getDayVoters, VOTE_LABEL } from "../lib/vote";
+  import { summarizeDay, getDayVoters } from "../lib/vote";
   import { commentCounts, selectedDay } from "../lib/stores";
   import { t, localeTag } from "../lib/i18n";
   import VoteButtons from "./VoteButtons.svelte";
@@ -74,17 +74,23 @@
       💬{commentN > 0 ? ` ${commentN}` : ""}
     </button>
   </div>
-  <div class="counts">
-    <span class="pill yes">{summary.yes}</span>
-    <span class="pill maybe">{summary.maybe}</span>
-    <span class="pill no">{summary.no}</span>
-  </div>
-  <div class="voter-list">
-    {#each voterRows as row (row.vote)}
-      <div class={row.vote} title={row.names.join(", ")}>
-        <strong>{VOTE_LABEL[row.vote]}</strong>{row.names.join(", ")}
+  <!-- counts double as the hover/focus trigger: names stay hidden until then -->
+  <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+  <div class="counts-wrap" tabindex={summary.total > 0 ? 0 : -1} class:has-voters={summary.total > 0}>
+    <div class="counts">
+      <span class="pill yes">{summary.yes}</span>
+      <span class="pill maybe">{summary.maybe}</span>
+      <span class="pill no">{summary.no}</span>
+    </div>
+    {#if summary.total > 0}
+      <div class="voter-pop" role="tooltip">
+        {#each voterRows as row (row.vote)}
+          {#each row.names as name (name)}
+            <div class="who"><span class="dot {row.vote}"></span>{name}</div>
+          {/each}
+        {/each}
       </div>
-    {/each}
+    {/if}
   </div>
   <VoteButtons date={iso} {current} />
 </article>
@@ -186,6 +192,14 @@
     opacity: 1;
     color: var(--ink);
   }
+  /* counts fill the middle so the vote buttons stay pinned to the bottom */
+  .counts-wrap {
+    position: relative;
+    flex: 1;
+  }
+  .counts-wrap.has-voters {
+    cursor: help;
+  }
   .counts {
     display: flex;
     flex-wrap: nowrap;
@@ -195,32 +209,58 @@
     flex: 1 1 0;
     min-width: 0;
   }
-  .voter-list {
-    flex: 1;
-    display: grid;
-    align-content: start;
-    gap: 3px;
-    color: var(--muted);
-    font-size: 11px;
-    line-height: 1.25;
-    min-height: 14px;
+  /* voter names: hidden by default, shown as a floating white card on hover/focus
+     (same treatment as the votings cards) */
+  .voter-pop {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    z-index: 30;
+    display: none;
+    grid-auto-flow: row;
+    gap: 2px;
+    min-width: 140px;
+    max-height: 220px;
+    overflow: auto;
+    padding: 7px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
   }
-  .voter-list div {
-    overflow: hidden;
-    text-overflow: ellipsis;
+  .counts-wrap:hover .voter-pop,
+  .counts-wrap:focus-within .voter-pop {
+    display: grid;
+  }
+  .voter-pop .who {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--ink);
     white-space: nowrap;
   }
-  .voter-list strong {
-    margin-right: 4px;
+  .voter-pop .who:hover {
+    background: var(--chip);
   }
-  .voter-list .yes strong {
-    color: var(--yes-ink);
+  .voter-pop .dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+    flex: 0 0 auto;
   }
-  .voter-list .maybe strong {
-    color: var(--maybe-ink);
+  .voter-pop .dot.yes {
+    background: var(--yes);
   }
-  .voter-list .no strong {
-    color: var(--no-ink);
+  .voter-pop .dot.maybe {
+    background: var(--maybe);
+  }
+  .voter-pop .dot.no {
+    background: var(--no);
   }
 
   @media (max-width: 720px) {

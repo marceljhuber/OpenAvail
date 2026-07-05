@@ -12,6 +12,24 @@
 
   let adminOpen = $state(false);
 
+  // Language menu: open on hover/focus, but linger briefly after the pointer
+  // leaves so you can move down into the list without it vanishing.
+  let langOpen = $state(false);
+  let langTimer: ReturnType<typeof setTimeout> | undefined;
+  function openLang() {
+    clearTimeout(langTimer);
+    langOpen = true;
+  }
+  function closeLangSoon() {
+    clearTimeout(langTimer);
+    langTimer = setTimeout(() => (langOpen = false), 1600);
+  }
+  function pickLang(code: Parameters<typeof setLocale>[0]) {
+    setLocale(code);
+    clearTimeout(langTimer);
+    langOpen = false;
+  }
+
   function setView(view: ViewKind) {
     filters.update((f) => ({ ...f, view }));
   }
@@ -28,25 +46,41 @@
       <span class="name">{$t("app.title", { owner: $appConfig?.ownerName ?? "" })}</span>
     </div>
     <div class="session">
-      <!-- language picker: shows the current flag; hover/focus reveals the menu -->
-      <div class="lang">
-        <button class="btn secondary icon lang-btn" aria-haspopup="menu" title={$t("lang.choose")}>
+      <!-- language picker: opens on hover/focus and lingers after mouse-out -->
+      <div
+        class="lang"
+        role="menu"
+        tabindex="-1"
+        onmouseenter={openLang}
+        onmouseleave={closeLangSoon}
+        onfocusin={openLang}
+        onfocusout={closeLangSoon}
+      >
+        <button
+          class="btn secondary icon lang-btn"
+          aria-haspopup="menu"
+          aria-expanded={langOpen}
+          title={$t("lang.choose")}
+          onclick={() => (langOpen ? (langOpen = false) : openLang())}
+        >
           {LOCALES.find((l) => l.code === $locale)?.flag}
         </button>
-        <div class="lang-menu" role="menu">
-          {#each LOCALES as l (l.code)}
-            <button
-              class="lang-item"
-              class:on={$locale === l.code}
-              role="menuitemradio"
-              aria-checked={$locale === l.code}
-              onclick={() => setLocale(l.code)}
-            >
-              <span class="flag">{l.flag}</span>
-              {l.label}
-            </button>
-          {/each}
-        </div>
+        {#if langOpen}
+          <div class="lang-menu">
+            {#each LOCALES as l (l.code)}
+              <button
+                class="lang-item"
+                class:on={$locale === l.code}
+                role="menuitemradio"
+                aria-checked={$locale === l.code}
+                onclick={() => pickLang(l.code)}
+              >
+                <span class="flag">{l.flag}</span>
+                {l.label}
+              </button>
+            {/each}
+          </div>
+        {/if}
       </div>
       <button
         class="btn secondary icon"
@@ -108,7 +142,7 @@
 
 <style>
   .shell {
-    width: min(1560px, 100%);
+    width: min(1720px, 100%);
     margin: 0 auto;
     padding: 16px;
     display: grid;
@@ -158,22 +192,20 @@
   }
   .lang-menu {
     position: absolute;
-    top: calc(100% + 6px);
+    top: 100%;
     right: 0;
     z-index: 40;
-    display: none;
+    display: flex;
     flex-direction: column;
     gap: 2px;
-    padding: 6px;
+    /* top padding bridges the gap to the button so the pointer never leaves
+       the .lang region on the way down to the list */
+    padding: 8px 6px 6px;
     min-width: 160px;
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: 14px;
     box-shadow: var(--shadow);
-  }
-  .lang:hover .lang-menu,
-  .lang:focus-within .lang-menu {
-    display: flex;
   }
   .lang-item {
     display: flex;
@@ -210,7 +242,7 @@
   /* votings rail (left) + main content (right) */
   .body {
     display: grid;
-    grid-template-columns: 380px minmax(0, 1fr);
+    grid-template-columns: 340px minmax(0, 1fr);
     gap: 14px;
     align-items: start;
   }
