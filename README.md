@@ -111,16 +111,22 @@ everywhere their name appears, including past comments and the change log.
 
 ## Using the app
 
-- **Calendar** — infinite month-by-month scroll; click Yes/Maybe/No on any day. Stronger green =
-  more "yes". A focus filter highlights matching days.
+- **Calendar** — infinite month-by-month scroll (a few past months sit above; it opens on the
+  current month and greys out past days); click Yes/Maybe/No on any day. Stronger green = more
+  "yes", or flip on **🔥 Heatmap** to shade every day dark-green→yellow→dark-red by yes-count. A
+  focus filter highlights matching days.
 - **Timeline** — every member as a row, days as columns over your chosen range; the focus filter
-  hides non-matching days so you can isolate, say, days a key person can attend.
+  hides non-matching days so you can isolate, say, days a key person can attend. Pan across the days
+  by dragging the grid, scrolling the mouse wheel, the ⏮◀▶⏭ buttons, or arrow keys — handy when
+  your OS hides the horizontal scrollbar.
 - **Range** — set the analysis window (e.g. 1 Jul – 1 Sep) for the timeline, stats and sorting.
 - **Focus + sort** — pick members and a required vote ("only days where Rainer voted yes"), then
   sort by most yes / responses / maybe, or "Most yes (focus)".
-- **Votings** — the third tab. Create a multiple-choice poll (title + editable options) and start
-  it; everyone votes blind, and results reveal only once each person has voted. Selections stay
-  editable, and you can run several polls at once. Creators and admins can delete a poll.
+- **Votings** — the third tab. Create a **single-** or **multiple-choice** poll (title + options)
+  and start it; everyone votes blind, and results — counts _and_ who picked what — reveal only once
+  each person has voted. Polls stay fully editable afterwards: rename/add/delete options, edit the
+  title, and switch between single/multiple choice. Creators and admins can **end** a voting (final
+  results shown to everyone, no more votes; re-openable) or delete it. Run several at once.
 
 ## Development
 

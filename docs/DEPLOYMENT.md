@@ -247,9 +247,12 @@ Points to get right when migrating:
 
 After starting, sign in as the admin and confirm your votes/members/polls are all present.
 
-The SQLite schema is additive (`CREATE TABLE IF NOT EXISTS`), so a newer build reads an older
-database as-is. Downgrading to an *older* build on a newer database is not supported — restore a
-matching backup instead.
+The SQLite schema is additive (`CREATE TABLE IF NOT EXISTS`, plus defensive `ALTER TABLE … ADD
+COLUMN` migrations run automatically on start), so a newer build reads an older database as-is and
+back-fills any new columns with safe defaults. For example, upgrading to the editable-votings
+release adds `polls.closed_at` (ends a voting) and `polls.mode` (`'single'`/`'multi'`, defaulting
+to `'multi'` so existing polls behave unchanged) — no manual step. Downgrading to an *older* build
+on a newer database is not supported — restore a matching backup instead.
 
 ---
 

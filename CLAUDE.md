@@ -54,9 +54,14 @@ needed to change it. Loaded by `server/src/config.ts`.
 `users`, `votes(user_id,date)` toggled yes/maybe/no, `changes` (capped log), `invites`
 (reusable, 24h TTL, revocable), `sessions`. Votes are `votes[isoDate][userId] = vote`.
 
-Polls ("Votings" tab): `polls`, `poll_options`, `poll_votes` (multi-select per user). Results are
-**blind until the requesting user has voted** — `buildPollView` (server/src/polls.ts) returns null
-counts/totals until then; do not leak counts to a user who hasn't voted.
+Polls ("Votings" tab): `polls`, `poll_options`, `poll_votes`. A poll has a `mode`
+(`'single'`=radio / `'multi'`=checkboxes; single-choice is enforced server-side in `setUserVotes`
+and trims existing selections when switched) and a nullable `closed_at`. Results (counts **and**
+per-option voter names) are **blind until the requesting user has voted _or_ the poll is closed** —
+`buildPollView` (server/src/polls.ts) returns null counts/voters/totals until then; do not leak
+them to a user who hasn't voted while the poll is open. Ending a poll (`closed_at` set, creator/
+admin only) reveals results to everyone and blocks further votes; options/title/mode stay editable
+via the poll routes. New poll columns are added by the idempotent `migrate()` in `db.ts`.
 
 ## Conventions
 - Conventional Commits; commit per major feature. Never commit `.env`, `legacy/`, or `INDEX.md`
