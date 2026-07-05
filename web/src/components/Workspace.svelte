@@ -1,6 +1,7 @@
 <script lang="ts">
   import { appConfig, session, filters, selectedDay, theme, toggleTheme, logout } from "../lib/stores";
   import type { ViewKind } from "../lib/stores";
+  import { t, locale, setLocale, LOCALES } from "../lib/i18n";
   import DayModal from "./DayModal.svelte";
   import CalendarView from "./CalendarView.svelte";
   import TimelineView from "./TimelineView.svelte";
@@ -24,14 +25,34 @@
   <header class="topbar panel">
     <div class="brand">
       <span class="mark">OA</span>
-      <span class="name">{$appConfig?.ownerName ?? ""}'s OpenAvail</span>
+      <span class="name">{$t("app.title", { owner: $appConfig?.ownerName ?? "" })}</span>
     </div>
     <div class="session">
+      <!-- language picker: shows the current flag; hover/focus reveals the menu -->
+      <div class="lang">
+        <button class="btn secondary icon lang-btn" aria-haspopup="menu" title={$t("lang.choose")}>
+          {LOCALES.find((l) => l.code === $locale)?.flag}
+        </button>
+        <div class="lang-menu" role="menu">
+          {#each LOCALES as l (l.code)}
+            <button
+              class="lang-item"
+              class:on={$locale === l.code}
+              role="menuitemradio"
+              aria-checked={$locale === l.code}
+              onclick={() => setLocale(l.code)}
+            >
+              <span class="flag">{l.flag}</span>
+              {l.label}
+            </button>
+          {/each}
+        </div>
+      </div>
       <button
         class="btn secondary icon"
         onclick={toggleTheme}
-        title="Toggle dark mode"
-        aria-label="Toggle dark mode"
+        title={$t("topbar.theme")}
+        aria-label={$t("topbar.theme")}
       >
         {$theme === "dark" ? "☀️" : "🌙"}
       </button>
@@ -39,11 +60,11 @@
         {#if $session.picture}
           <img class="avatar" src={$session.picture} alt="" referrerpolicy="no-referrer" />
         {/if}
-        <span class="who">{$session.name}{$session.role === "admin" ? " · admin" : ""}</span>
+        <span class="who">{$session.name}{$session.role === "admin" ? ` · ${$t("topbar.admin")}` : ""}</span>
         {#if $session.role === "admin"}
-          <button class="btn" onclick={() => (adminOpen = true)}>Manage</button>
+          <button class="btn" onclick={() => (adminOpen = true)}>{$t("topbar.manage")}</button>
         {/if}
-        <button class="btn secondary" onclick={onSignOut}>Sign out</button>
+        <button class="btn secondary" onclick={onSignOut}>{$t("topbar.signout")}</button>
       {/if}
     </div>
   </header>
@@ -63,10 +84,10 @@
       <div class="bar">
         <div class="tabs panel">
           <button class="tab" class:active={$filters.view === "calendar"} onclick={() => setView("calendar")}>
-            Calendar
+            {$t("tab.calendar")}
           </button>
           <button class="tab" class:active={$filters.view === "timeline"} onclick={() => setView("timeline")}>
-            Timeline
+            {$t("tab.timeline")}
           </button>
         </div>
       </div>
@@ -127,6 +148,54 @@
   .btn.icon {
     padding: 0 10px;
     font-size: 15px;
+  }
+  .lang {
+    position: relative;
+  }
+  .lang-btn {
+    font-size: 17px;
+    line-height: 1;
+  }
+  .lang-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 40;
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px;
+    min-width: 160px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+  }
+  .lang:hover .lang-menu,
+  .lang:focus-within .lang-menu {
+    display: flex;
+  }
+  .lang-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--ink);
+    font-weight: 700;
+    font-size: 14px;
+    text-align: left;
+  }
+  .lang-item:hover {
+    background: var(--chip);
+  }
+  .lang-item.on {
+    background: var(--chip);
+  }
+  .lang-item .flag {
+    font-size: 16px;
   }
   .avatar {
     width: 30px;

@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { board, session, filters } from "../lib/stores";
   import {
-    WEEKDAYS,
+    weekdayLabels,
     addMonths,
     daysInMonth,
     formatMonthYear,
@@ -12,6 +12,7 @@
   } from "../lib/date";
   import { summarizeDay } from "../lib/vote";
   import { dayMatchesFocus } from "../lib/derive";
+  import { t, localeTag } from "../lib/i18n";
   import DayCell from "./DayCell.svelte";
 
   const PAST = 3; // months of history shown above (so you can scroll back)
@@ -30,12 +31,18 @@
 
   let scrollEl = $state<HTMLElement | null>(null);
 
-  // Open on the current month (past months sit above, reachable by scrolling up).
-  onMount(() => {
+  function scrollToCurrentMonth() {
     const el = scrollEl?.querySelector(`[data-month="${thisMonthISO}"]`) as HTMLElement | null;
     if (el && scrollEl) {
       scrollEl.scrollTop += el.getBoundingClientRect().top - scrollEl.getBoundingClientRect().top;
     }
+  }
+
+  // Open on the current month (past months sit above, reachable by scrolling up).
+  // Retry across a few frames because day cells render taller once board data
+  // arrives, which would otherwise leave us parked on an earlier month.
+  onMount(() => {
+    for (const delay of [0, 120, 400, 900]) setTimeout(scrollToCurrentMonth, delay);
   });
 
   const currentUserId = $derived($session?.id ?? "");
@@ -89,33 +96,36 @@
   }
 </script>
 
-<div class="cal-tools">
-  <button
-    type="button"
-    class="heat-toggle"
-    class:on={$filters.heatmap}
-    onclick={toggleHeatmap}
-    aria-pressed={$filters.heatmap}
-    title="Shade each day green→red by how many said yes"
-  >
-    🔥 Heatmap
-  </button>
-  {#if $filters.heatmap}
-    <div class="heat-legend" aria-hidden="true">
-      <span>fewer</span>
-      <span class="scale"></span>
-      <span>most yes</span>
-    </div>
-  {/if}
-</div>
+<!-- single root element so the parent .cal-grid places the whole calendar in
+     one grid cell (two roots leaked the scroll area into the sidebar column) -->
+<div class="calendar">
+  <div class="cal-tools">
+    <button
+      type="button"
+      class="heat-toggle"
+      class:on={$filters.heatmap}
+      onclick={toggleHeatmap}
+      aria-pressed={$filters.heatmap}
+      title={$t("cal.heatmapHint")}
+    >
+      🔥 {$t("cal.heatmap")}
+    </button>
+    {#if $filters.heatmap}
+      <div class="heat-legend" aria-hidden="true">
+        <span>{$t("cal.fewer")}</span>
+        <span class="scale"></span>
+        <span>{$t("cal.mostYes")}</span>
+      </div>
+    {/if}
+  </div>
 
-<div class="calendar-scroll" bind:this={scrollEl} onscroll={onScroll}>
+  <div class="calendar-scroll" bind:this={scrollEl} onscroll={onScroll}>
   {#each months as month (toISO(month))}
     {@const isPastMonth = toISO(month) < thisMonthISO}
     <section class="month-card" class:past-month={isPastMonth} data-month={toISO(month)}>
-      <h3 class="month-title">{formatMonthYear(month)}</h3>
+      <h3 class="month-title">{formatMonthYear(month, $localeTag)}</h3>
       <div class="weekday-grid">
-        {#each WEEKDAYS as wd (wd)}
+        {#each weekdayLabels($localeTag) as wd, i (i)}
           <div class="weekday">{wd}</div>
         {/each}
       </div>
@@ -141,9 +151,15 @@
       </div>
     </section>
   {/each}
+  </div>
 </div>
 
 <style>
+  .calendar {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
   .cal-tools {
     display: flex;
     align-items: center;

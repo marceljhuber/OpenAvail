@@ -3,6 +3,32 @@
 A running diary of notable changes. Newest first. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); dates are Europe/Vienna.
 
+## 2026-07-06
+
+### Languages (English / German)
+- A **language picker** in the top-right (flag button, hover/focus dropdown).
+  The whole main interface — top bar, tabs, filters, calendar, timeline,
+  votings, sidebar, vote buttons — is now bilingual, with the choice saved to
+  localStorage and month/weekday/date names formatted in the active locale.
+  (Landing, admin and day-detail dialogs are not translated yet.)
+
+### Votings
+- Voter names are **hidden by default** now; each option shows a small "👤 n"
+  badge and reveals the names in a floating white card (one per line) on
+  hover/focus, instead of always listing them inline.
+
+### Fixes
+- **Calendar was squeezed into a tiny column.** The heatmap toolbar made the
+  calendar component render two root elements, so the parent grid pushed the
+  scroll area into the 280px sidebar column. Wrapped it in a single root.
+- **Timeline wouldn't scroll/drag.** The panel had `min-width:auto` (grid-item
+  default) and grew to the full grid width, overflowing the page instead of
+  scrolling internally, so the drag/wheel/button handlers had nothing to move.
+  Pinned `min-width:0` so it scrolls within its column.
+- The calendar now reliably opens on the current month (it could drift onto a
+  past month once vote data loaded and cells grew taller).
+- Repositioned the timeline "Person" header (bottom-left, above the names).
+
 ## 2026-07-05
 
 ### Votings — editable, endable, and transparent

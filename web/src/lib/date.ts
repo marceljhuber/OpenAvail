@@ -5,6 +5,13 @@
 
 export const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
+/** Monday-first short weekday names for a locale (Jan 1 2024 was a Monday). */
+export function weekdayLabels(locale?: string): string[] {
+  return Array.from({ length: 7 }, (_, i) =>
+    new Date(2024, 0, 1 + i).toLocaleDateString(locale, { weekday: "short" }),
+  );
+}
+
 export function toISO(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
@@ -53,8 +60,8 @@ export function enumerateDays(fromISO: string, toISO_: string): Date[] {
   return days;
 }
 
-export function formatLongDate(date: Date): string {
-  return date.toLocaleDateString(undefined, {
+export function formatLongDate(date: Date, locale?: string): string {
+  return date.toLocaleDateString(locale, {
     weekday: "short",
     month: "short",
     day: "numeric",
@@ -62,15 +69,15 @@ export function formatLongDate(date: Date): string {
   });
 }
 
-export function formatShortDate(date: Date): string {
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+export function formatShortDate(date: Date, locale?: string): string {
+  return date.toLocaleDateString(locale, { month: "short", day: "numeric" });
 }
 
-export function formatMonthYear(date: Date): string {
-  return date.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+export function formatMonthYear(date: Date, locale?: string): string {
+  return date.toLocaleDateString(locale, { month: "long", year: "numeric" });
 }
 
-export function formatRelativeTime(value: string): string {
+export function formatRelativeTime(value: string, locale?: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "just now";
   const seconds = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000));
@@ -79,5 +86,5 @@ export function formatRelativeTime(value: string): string {
   if (minutes < 60) return `${minutes}m ago`;
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return `${hours}h ago`;
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return date.toLocaleDateString(locale, { month: "short", day: "numeric" });
 }

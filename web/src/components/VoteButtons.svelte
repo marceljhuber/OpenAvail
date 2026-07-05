@@ -1,26 +1,23 @@
 <script lang="ts">
   import { castVote } from "../lib/stores";
+  import { t } from "../lib/i18n";
   import type { Vote } from "../lib/types";
 
   let { date, current }: { date: string; current: Vote | undefined } = $props();
 
-  const options: { vote: Vote; label: string }[] = [
-    { vote: "yes", label: "Yes" },
-    { vote: "maybe", label: "Maybe" },
-    { vote: "no", label: "No" },
-  ];
+  const votes: Vote[] = ["yes", "maybe", "no"];
 </script>
 
-<div class="vote-buttons" role="group" aria-label="Vote for this day">
-  {#each options as o (o.vote)}
+<div class="vote-buttons" role="group" aria-label={$t("cal.voteForDay")}>
+  {#each votes as v (v)}
     <button
       type="button"
-      class="vb {o.vote}"
-      class:active={current === o.vote}
-      aria-pressed={current === o.vote}
-      onclick={() => castVote(date, o.vote)}
+      class="vb {v}"
+      class:active={current === v}
+      aria-pressed={current === v}
+      onclick={() => castVote(date, v)}
     >
-      {o.label}
+      {$t(`vote.${v}`)}
     </button>
   {/each}
 </div>

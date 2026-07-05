@@ -1,8 +1,8 @@
 <script lang="ts">
   import type { DaySummary, User, Vote, VotesByDate } from "../lib/types";
   import { summarizeDay, getDayVoters, VOTE_LABEL } from "../lib/vote";
-  import { WEEKDAYS, mondayBasedDay } from "../lib/date";
   import { commentCounts, selectedDay } from "../lib/stores";
+  import { t, localeTag } from "../lib/i18n";
   import VoteButtons from "./VoteButtons.svelte";
 
   let {
@@ -59,17 +59,17 @@
   style="--yes-alpha: {alpha.toFixed(2)}; --heat-hue: {heatHue.toFixed(0)}"
 >
   <div class="day-head">
-    <span class="date-number" data-weekday={WEEKDAYS[mondayBasedDay(date)]}>{date.getDate()}</span>
-    <span class="weekday-tag">{WEEKDAYS[mondayBasedDay(date)]}</span>
-    <span class="yes-score" title="{summary.yes} of {members.length} said yes">
+    <span class="date-number">{date.getDate()}</span>
+    <span class="weekday-tag">{date.toLocaleDateString($localeTag, { weekday: "short" })}</span>
+    <span class="yes-score" title={$t("cal.saidYes", { yes: summary.yes, total: members.length })}>
       {summary.yes}/{members.length}
     </span>
     <button
       class="cbtn"
       class:has={commentN > 0}
       onclick={() => selectedDay.set(iso)}
-      title="Comments & details"
-      aria-label="Open day details and comments"
+      title={$t("cal.comments")}
+      aria-label={$t("cal.comments")}
     >
       💬{commentN > 0 ? ` ${commentN}` : ""}
     </button>

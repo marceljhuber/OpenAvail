@@ -9,6 +9,7 @@
     deletePollOption,
   } from "../lib/stores";
   import type { PollMode, PollView } from "../lib/types";
+  import { t } from "../lib/i18n";
 
   let { poll }: { poll: PollView } = $props();
 
@@ -57,7 +58,7 @@
   }
 
   async function onDelete() {
-    if (confirm(`Delete the voting "${poll.title}"?`)) await deletePoll(poll.id);
+    if (confirm($t("poll.confirmDelete", { title: poll.title }))) await deletePoll(poll.id);
   }
 
   async function setMode(mode: PollMode) {
@@ -65,20 +66,20 @@
   }
 
   async function saveTitle(value: string) {
-    const t = value.trim();
-    if (t && t !== poll.title) await updatePoll(poll.id, { title: t });
+    const val = value.trim();
+    if (val && val !== poll.title) await updatePoll(poll.id, { title: val });
   }
 
   async function saveOption(optionId: string, value: string, current: string) {
-    const t = value.trim();
-    if (t && t !== current) await renamePollOption(poll.id, optionId, t);
+    const val = value.trim();
+    if (val && val !== current) await renamePollOption(poll.id, optionId, val);
   }
 
   async function addOption() {
-    const t = newOption.trim();
-    if (!t) return;
+    const val = newOption.trim();
+    if (!val) return;
     newOption = "";
-    await addPollOption(poll.id, t);
+    await addPollOption(poll.id, val);
   }
 
   async function removeOption(optionId: string) {
@@ -87,8 +88,7 @@
   }
 
   async function onEnd() {
-    if (confirm(`End the voting "${poll.title}"? Results become visible to everyone and no more votes can be cast.`))
-      await closePoll(poll.id);
+    if (confirm($t("poll.confirmEnd", { title: poll.title }))) await closePoll(poll.id);
   }
 
   async function onReopen() {
@@ -99,25 +99,25 @@
 <article class="poll">
   <header>
     <div class="titles">
-      <h3>{poll.title}{#if poll.closed}<span class="ended-tag">Ended</span>{/if}</h3>
+      <h3>{poll.title}{#if poll.closed}<span class="ended-tag">{$t("poll.ended")}</span>{/if}</h3>
       <p class="meta">
-        by {poll.createdByName}
-        · {poll.mode === "single" ? "single choice" : "multiple choice"}
-        {#if poll.revealed}· {poll.totalVoters} voter{poll.totalVoters === 1 ? "" : "s"}{/if}
-        {#if saving}· <span class="saving">saving…</span>{/if}
+        {$t("poll.by", { name: poll.createdByName })}
+        · {poll.mode === "single" ? $t("poll.modeSingle") : $t("poll.modeMulti")}
+        {#if poll.revealed}· {poll.totalVoters === 1 ? $t("poll.voter", { n: poll.totalVoters }) : $t("poll.voters", { n: poll.totalVoters ?? 0 })}{/if}
+        {#if saving}· <span class="saving">{$t("poll.saving")}</span>{/if}
       </p>
     </div>
     {#if poll.canManage}
       <div class="manage">
-        <button class="mbtn" class:on={editing} onclick={() => (editing = !editing)} title="Edit voting">
-          {editing ? "Done" : "Edit"}
+        <button class="mbtn" class:on={editing} onclick={() => (editing = !editing)} title={$t("poll.editVoting")}>
+          {editing ? $t("poll.done") : $t("poll.edit")}
         </button>
         {#if poll.closed}
-          <button class="mbtn" onclick={onReopen} title="Re-open voting">Re-open</button>
+          <button class="mbtn" onclick={onReopen} title={$t("poll.reopenVoting")}>{$t("poll.reopen")}</button>
         {:else}
-          <button class="mbtn" onclick={onEnd} title="End voting">End</button>
+          <button class="mbtn" onclick={onEnd} title={$t("poll.endVoting")}>{$t("poll.end")}</button>
         {/if}
-        <button class="del" onclick={onDelete} aria-label="Delete voting" title="Delete voting">✕</button>
+        <button class="del" onclick={onDelete} aria-label={$t("poll.delete")} title={$t("poll.delete")}>✕</button>
       </div>
     {/if}
   </header>
@@ -125,7 +125,7 @@
   {#if editing && poll.canManage}
     <div class="editor">
       <label class="ed-field">
-        <span>Title</span>
+        <span>{$t("votings.fieldTitle")}</span>
         <input
           value={poll.title}
           onblur={(e) => saveTitle(e.currentTarget.value)}
@@ -134,19 +134,19 @@
       </label>
 
       <div class="ed-field">
-        <span>Mode</span>
+        <span>{$t("votings.mode")}</span>
         <div class="mode-seg">
           <button class="seg-btn" class:on={poll.mode === "single"} onclick={() => setMode("single")}>
-            Single choice
+            {$t("mode.single")}
           </button>
           <button class="seg-btn" class:on={poll.mode === "multi"} onclick={() => setMode("multi")}>
-            Multiple choice
+            {$t("mode.multi")}
           </button>
         </div>
       </div>
 
       <div class="ed-field">
-        <span>Options</span>
+        <span>{$t("votings.options")}</span>
         <div class="ed-opts">
           {#each poll.options as opt (opt.id)}
             <div class="ed-opt">
@@ -160,33 +160,34 @@
                 type="button"
                 onclick={() => removeOption(opt.id)}
                 disabled={poll.options.length <= 1}
-                aria-label="Delete option"
+                aria-label={$t("poll.delete")}
               >✕</button>
             </div>
           {/each}
         </div>
         <div class="ed-add">
           <input
-            placeholder="New option…"
+            placeholder={$t("poll.newOption")}
             bind:value={newOption}
             onkeydown={(e) => e.key === "Enter" && addOption()}
           />
-          <button class="add" type="button" onclick={addOption} disabled={!newOption.trim()}>+ Add</button>
+          <button class="add" type="button" onclick={addOption} disabled={!newOption.trim()}>{$t("poll.add")}</button>
         </div>
       </div>
     </div>
   {/if}
 
   {#if poll.closed}
-    <p class="blind ended">🏁 Voting ended — here are the final results.</p>
+    <p class="blind ended">{$t("poll.blindClosed")}</p>
   {:else if !poll.revealed}
-    <p class="blind">🔒 Tap an option to vote — results reveal once you do.</p>
+    <p class="blind">{$t("poll.blindOpen")}</p>
   {/if}
 
   <ul class="options">
     {#each poll.options as opt (opt.id)}
       {@const mine = selected.has(opt.id)}
-      <li>
+      {@const voters = opt.voters ?? []}
+      <li class="opt-li">
         <button
           class="opt"
           class:on={mine}
@@ -198,14 +199,24 @@
           <span class="check" class:radio={poll.mode === "single"} aria-hidden="true">{mine ? "✓" : ""}</span>
           <span class="label">{opt.label}</span>
           {#if poll.revealed}
+            {#if voters.length > 0}
+              <span
+                class="who-badge"
+                tabindex="0"
+                role="button"
+                aria-label={$t("poll.whoAria", { n: voters.length })}
+                title={$t("poll.whoVoted")}
+              >👤 {voters.length}</span>
+            {/if}
             <span class="count">{opt.votes}</span>
             <span class="bar" style="--w:{((opt.votes ?? 0) / maxVotes) * 100}%"></span>
           {/if}
         </button>
-        {#if poll.revealed && opt.voters && opt.voters.length > 0}
-          <p class="voters">
-            {#each opt.voters as name (name)}<span class="who">{name}</span>{/each}
-          </p>
+        <!-- names hidden by default; revealed as a little card on hover/focus -->
+        {#if poll.revealed && voters.length > 0}
+          <div class="voters-pop" role="tooltip">
+            {#each voters as name (name)}<span class="who">{name}</span>{/each}
+          </div>
         {/if}
       </li>
     {/each}
@@ -306,19 +317,54 @@
   .opt:disabled {
     cursor: default;
   }
-  .voters {
-    margin: 4px 2px 2px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
+  .opt-li {
+    position: relative;
   }
-  .who {
+  /* small "👤 n" affordance inside the option row */
+  .who-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 800;
     color: var(--muted);
     background: var(--chip);
     border-radius: 999px;
     padding: 1px 8px;
+    cursor: help;
+  }
+  /* voter names: hidden by default, shown as a floating white card on hover/focus */
+  .voters-pop {
+    position: absolute;
+    top: calc(100% - 4px);
+    right: 8px;
+    z-index: 30;
+    display: none;
+    grid-auto-flow: row;
+    gap: 2px;
+    min-width: 150px;
+    max-height: 240px;
+    overflow: auto;
+    padding: 7px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+  }
+  .opt-li:hover .voters-pop,
+  .opt-li:focus-within .voters-pop {
+    display: grid;
+  }
+  .voters-pop .who {
+    padding: 5px 9px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  .voters-pop .who:hover {
+    background: var(--chip);
   }
   .opt {
     position: relative;

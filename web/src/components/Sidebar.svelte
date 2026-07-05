@@ -2,6 +2,7 @@
   import { board, filters } from "../lib/stores";
   import { enumerateDays, formatLongDate, formatRelativeTime, parseISODate, toISO } from "../lib/date";
   import { getBestDays, summarizeDay, VOTE_LABEL } from "../lib/vote";
+  import { t, localeTag } from "../lib/i18n";
 
   const rangeDays = $derived(enumerateDays($filters.rangeFrom, $filters.rangeTo));
   const bestDays = $derived(getBestDays(rangeDays, $board.votes).slice(0, 8));
@@ -22,21 +23,21 @@
 
 <aside class="sidebar">
   <div class="stats">
-    <div class="stat panel"><span>People</span><strong>{stats.people}</strong></div>
-    <div class="stat panel pos"><span>Best yes</span><strong>{stats.bestYes}</strong></div>
-    <div class="stat panel"><span>Voted days</span><strong>{stats.voted}</strong></div>
+    <div class="stat panel"><span>{$t("side.people")}</span><strong>{stats.people}</strong></div>
+    <div class="stat panel pos"><span>{$t("side.bestYes")}</span><strong>{stats.bestYes}</strong></div>
+    <div class="stat panel"><span>{$t("side.votedDays")}</span><strong>{stats.voted}</strong></div>
   </div>
 
   <section class="panel block">
-    <h3>Strongest days</h3>
+    <h3>{$t("side.strongest")}</h3>
     {#if bestDays.length === 0}
-      <p class="muted">No votes in this range yet.</p>
+      <p class="muted">{$t("side.noVotes")}</p>
     {:else}
       <div class="best-list">
         {#each bestDays as d (d.iso)}
           <div class="best">
-            <strong>{formatLongDate(d.date)}</strong>
-            <span>{d.summary.yes} yes · {d.summary.maybe} maybe · {d.summary.no} no</span>
+            <strong>{formatLongDate(d.date, $localeTag)}</strong>
+            <span>{$t("side.summary", { yes: d.summary.yes, maybe: d.summary.maybe, no: d.summary.no })}</span>
           </div>
         {/each}
       </div>
@@ -44,18 +45,18 @@
   </section>
 
   <section class="panel block">
-    <h3>Recent changes</h3>
+    <h3>{$t("side.recentChanges")}</h3>
     {#if recentChanges.length === 0}
-      <p class="muted">No changes yet.</p>
+      <p class="muted">{$t("side.noChanges")}</p>
     {:else}
       <div class="changes">
         {#each recentChanges as c (c.id)}
           <div class="change">
             <div class="row">
               <strong>{c.userName}</strong>
-              <span class="muted">{formatRelativeTime(c.at)}</span>
+              <span class="muted">{formatRelativeTime(c.at, $localeTag)}</span>
             </div>
-            <div class="muted small">{formatLongDate(parseISODate(c.date))}</div>
+            <div class="muted small">{formatLongDate(parseISODate(c.date), $localeTag)}</div>
             <div class="votes">
               <span class="tag {c.previousVote ?? 'none'}">{c.previousVote ? VOTE_LABEL[c.previousVote] : "—"}</span>
               <span class="arrow">→</span>

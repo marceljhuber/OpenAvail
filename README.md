@@ -111,6 +111,9 @@ everywhere their name appears, including past comments and the change log.
 
 ## Using the app
 
+The interface is available in **English and German** — pick your language from
+the flag menu in the top-right (the choice is remembered per browser).
+
 - **Calendar** — infinite month-by-month scroll (a few past months sit above; it opens on the
   current month and greys out past days); click Yes/Maybe/No on any day. Stronger green = more
   "yes", or flip on **🔥 Heatmap** to shade every day dark-green→yellow→dark-red by yes-count. A

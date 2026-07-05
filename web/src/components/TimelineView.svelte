@@ -3,6 +3,7 @@
   import { enumerateDays, formatLongDate, toISO } from "../lib/date";
   import { summarizeDay, VOTE_LABEL } from "../lib/vote";
   import { dayMatchesFocus, sortDays } from "../lib/derive";
+  import { t, localeTag } from "../lib/i18n";
   import type { Vote } from "../lib/types";
 
   const COL_W = 46; // px per day column
@@ -125,27 +126,28 @@
 <section class="timeline panel">
   <div class="toolbar">
     <div>
-      <p class="eyebrow">Detailed votes</p>
-      <h2>People × days</h2>
+      <p class="eyebrow">{$t("tl.eyebrow")}</p>
+      <h2>{$t("tl.peopleDays")}</h2>
     </div>
     <div class="toolbar-right">
       <p class="hint">
-        {total} day{total === 1 ? "" : "s"}
-        {focusActive ? " (filtered)" : ""} · {$board.members.length} people
+        {total === 1 ? $t("tl.day", { n: total }) : $t("tl.days", { n: total })}{focusActive
+          ? $t("tl.filtered")
+          : ""} · {$t("tl.people", { n: $board.members.length })}
       </p>
       {#if total > 0}
-        <div class="scroll-nav" aria-label="Scroll timeline">
-          <button onclick={() => jump(-1)} disabled={atStart} title="Jump to start" aria-label="Jump to start">⏮</button>
-          <button onclick={() => nudge(-1)} disabled={atStart} title="Scroll left" aria-label="Scroll left">◀</button>
-          <button onclick={() => nudge(1)} disabled={atEnd} title="Scroll right" aria-label="Scroll right">▶</button>
-          <button onclick={() => jump(1)} disabled={atEnd} title="Jump to end" aria-label="Jump to end">⏭</button>
+        <div class="scroll-nav">
+          <button onclick={() => jump(-1)} disabled={atStart} title={$t("tl.jumpStart")} aria-label={$t("tl.jumpStart")}>⏮</button>
+          <button onclick={() => nudge(-1)} disabled={atStart} title={$t("tl.scrollLeft")} aria-label={$t("tl.scrollLeft")}>◀</button>
+          <button onclick={() => nudge(1)} disabled={atEnd} title={$t("tl.scrollRight")} aria-label={$t("tl.scrollRight")}>▶</button>
+          <button onclick={() => jump(1)} disabled={atEnd} title={$t("tl.jumpEnd")} aria-label={$t("tl.jumpEnd")}>⏭</button>
         </div>
       {/if}
     </div>
   </div>
 
   {#if total === 0}
-    <p class="empty">No days match the current range/filter.</p>
+    <p class="empty">{$t("tl.noMatch")}</p>
   {:else}
     <!-- Intentionally an interactive scroll region: drag/wheel/arrow-key panning.
          Accessible alternatives exist (the ⏮◀▶⏭ buttons and focus + arrow keys),
@@ -155,7 +157,7 @@
       class="grid-scroll"
       class:grabbing={dragging}
       role="group"
-      aria-label="Votes grid — drag, scroll or use arrow keys to pan across days"
+      aria-label={$t("tl.gridAria")}
       tabindex="0"
       bind:this={scrollEl}
       bind:clientWidth={viewportW}
@@ -170,8 +172,8 @@
       <div class="grid">
         <!-- sticky member-name column -->
         <div class="names">
-          <div class="cell head corner">Person</div>
-          <div class="cell summary-label">Yes / responses</div>
+          <div class="cell head corner">{$t("tl.person")}</div>
+          <div class="cell summary-label">{$t("tl.yesResponses")}</div>
           {#each $board.members as m (m.id)}
             <div class="cell name" class:focus={focusSet.has(m.id)} title={m.name}>{m.name}</div>
           {/each}
@@ -183,10 +185,10 @@
           {@const iso = toISO(day)}
           {@const s = summarizeDay($board.votes, iso)}
           <div class="col" class:month-start={isMonthStart(day)} style="width:{COL_W}px">
-            <div class="cell head day" style="--mh:{monthHue(day)}" title={formatLongDate(day)}>
-              <span class="mon">{day.toLocaleDateString(undefined, { month: "short" })}</span>
+            <div class="cell head day" style="--mh:{monthHue(day)}" title={formatLongDate(day, $localeTag)}>
+              <span class="mon">{day.toLocaleDateString($localeTag, { month: "short" })}</span>
               <span class="dnum">{day.getDate()}</span>
-              <span class="dow">{day.toLocaleDateString(undefined, { weekday: "narrow" })}</span>
+              <span class="dow">{day.toLocaleDateString($localeTag, { weekday: "narrow" })}</span>
             </div>
             <div class="cell summary">{s.yes}/{s.total}</div>
             {#each $board.members as m (m.id)}
@@ -205,6 +207,11 @@
 <style>
   .timeline {
     padding: 18px;
+    /* grid items default to min-width:auto, which let the panel grow to the full
+       (very wide) grid and overflow the whole page instead of scrolling inside.
+       Pinning min-width:0 keeps the panel at its column width so .grid-scroll
+       actually scrolls horizontally within it. */
+    min-width: 0;
   }
   .toolbar {
     display: flex;
@@ -353,9 +360,15 @@
   }
   .names .corner {
     z-index: 4;
-    justify-content: flex-start;
-    padding-left: 12px;
-    align-items: center;
+    /* column-flex header: bottom-left so "Person" sits just above the names,
+       aligned with the day-number baseline instead of floating up top-centre */
+    align-items: flex-start;
+    justify-content: flex-end;
+    padding: 0 12px 8px;
+    color: var(--muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
   .summary-label,
   .name {

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { polls, createPoll } from "../lib/stores";
   import type { PollMode } from "../lib/types";
+  import { t } from "../lib/i18n";
   import PollCard from "./PollCard.svelte";
 
   const DEFAULTS = ["Pokemon Day", "One Piece Day", "Friends Day"];
@@ -57,7 +58,7 @@
       reset();
       creating = false;
     } catch (e) {
-      error = e instanceof Error ? e.message : "Could not start the voting.";
+      error = e instanceof Error ? e.message : $t("votings.error");
     } finally {
       busy = false;
     }
@@ -66,27 +67,27 @@
 
 <aside class="votings panel">
   <div class="head">
-    <h2>Votings</h2>
+    <h2>{$t("votings.title")}</h2>
     {#if !creating}
-      <button class="btn sm" onclick={() => (creating = true)}>+ New</button>
+      <button class="btn sm" onclick={() => (creating = true)}>{$t("votings.new")}</button>
     {/if}
   </div>
 
   {#if creating}
     <div class="create">
       <label class="field">
-        <span>Title</span>
-        <input placeholder="e.g. 25.07. Day?" bind:value={title} />
+        <span>{$t("votings.fieldTitle")}</span>
+        <input placeholder={$t("votings.titlePlaceholder")} bind:value={title} />
       </label>
 
       <div class="field">
-        <span>Options</span>
+        <span>{$t("votings.options")}</span>
         <div class="opt-list">
           {#each options as _, i (i)}
             <div class="opt-row">
               <input
                 class:ghost={isGhost(i)}
-                placeholder={`Option ${i + 1}`}
+                placeholder={$t("votings.optionN", { n: i + 1 })}
                 bind:value={options[i]}
                 oninput={() => markTouched(i)}
                 onfocus={(e) => isGhost(i) && e.currentTarget.select()}
@@ -96,51 +97,51 @@
                 type="button"
                 onclick={() => removeOption(i)}
                 disabled={options.length <= 1}
-                aria-label="Remove option"
+                aria-label={$t("votings.removeOption")}
               >
                 ✕
               </button>
             </div>
           {/each}
         </div>
-        <button class="add" type="button" onclick={addOption}>+ Add option</button>
+        <button class="add" type="button" onclick={addOption}>{$t("votings.addOption")}</button>
       </div>
 
       <div class="field">
-        <span>Mode</span>
+        <span>{$t("votings.mode")}</span>
         <div class="mode-seg">
           <button
             type="button"
             class="seg-btn"
             class:on={mode === "single"}
             onclick={() => (mode = "single")}
-          >Single choice</button>
+          >{$t("mode.single")}</button>
           <button
             type="button"
             class="seg-btn"
             class:on={mode === "multi"}
             onclick={() => (mode = "multi")}
-          >Multiple choice</button>
+          >{$t("mode.multi")}</button>
         </div>
       </div>
 
       {#if error}<p class="error">{error}</p>{/if}
 
       <div class="actions">
-        <button class="btn ghost-btn" onclick={() => { reset(); creating = false; }}>Cancel</button>
+        <button class="btn ghost-btn" onclick={() => { reset(); creating = false; }}>{$t("votings.cancel")}</button>
         <button class="btn" onclick={start} disabled={!canStart || busy}>
-          {busy ? "Starting…" : "Start voting"}
+          {busy ? $t("votings.starting") : $t("votings.start")}
         </button>
       </div>
       <p class="hint">
-        {mode === "single" ? "Single choice" : "Multiple choice"} · results hidden until each person votes. Editable later.
+        {$t("votings.hint", { mode: mode === "single" ? $t("mode.single") : $t("mode.multi") })}
       </p>
     </div>
   {/if}
 
   <div class="list">
     {#if $polls.length === 0}
-      <p class="empty">No votings yet. Tap <strong>+ New</strong> to start one.</p>
+      <p class="empty">{$t("votings.empty")} <strong>{$t("votings.new")}</strong> {$t("votings.emptyNew")}</p>
     {:else}
       {#each $polls as poll (poll.id)}
         <PollCard {poll} />
