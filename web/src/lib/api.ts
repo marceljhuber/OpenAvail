@@ -1,4 +1,4 @@
-import type { AppConfig, BoardState, Comment, Invite, PollView, User, Vote } from "./types";
+import type { AppConfig, BoardState, Comment, Invite, PollMode, PollView, User, Vote } from "./types";
 
 export class ApiError extends Error {
   constructor(
@@ -78,12 +78,39 @@ export const api = {
 
   // polls
   listPolls: () => request<{ polls: PollView[] }>("/api/polls").then((r) => r.polls),
-  createPoll: (title: string, options: string[]) =>
-    request<PollView>("/api/polls", { method: "POST", body: JSON.stringify({ title, options }) }),
+  createPoll: (title: string, options: string[], mode: PollMode = "multi") =>
+    request<PollView>("/api/polls", {
+      method: "POST",
+      body: JSON.stringify({ title, options, mode }),
+    }),
+  updatePoll: (id: string, patch: { title?: string; mode?: PollMode }) =>
+    request<PollView>(`/api/polls/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      body: JSON.stringify(patch),
+    }),
+  addPollOption: (id: string, label: string) =>
+    request<PollView>(`/api/polls/${encodeURIComponent(id)}/options`, {
+      method: "POST",
+      body: JSON.stringify({ label }),
+    }),
+  renamePollOption: (id: string, optionId: string, label: string) =>
+    request<PollView>(`/api/polls/${encodeURIComponent(id)}/options/${encodeURIComponent(optionId)}`, {
+      method: "PATCH",
+      body: JSON.stringify({ label }),
+    }),
+  deletePollOption: (id: string, optionId: string) =>
+    request<PollView>(`/api/polls/${encodeURIComponent(id)}/options/${encodeURIComponent(optionId)}`, {
+      method: "DELETE",
+    }),
   votePoll: (id: string, optionIds: string[]) =>
     request<PollView>(`/api/polls/${encodeURIComponent(id)}/vote`, {
       method: "POST",
       body: JSON.stringify({ optionIds }),
+    }),
+  closePoll: (id: string, reopen = false) =>
+    request<PollView>(`/api/polls/${encodeURIComponent(id)}/close`, {
+      method: "POST",
+      body: JSON.stringify({ reopen }),
     }),
   deletePoll: (id: string) =>
     request<{ ok: true }>(`/api/polls/${encodeURIComponent(id)}`, { method: "DELETE" }),

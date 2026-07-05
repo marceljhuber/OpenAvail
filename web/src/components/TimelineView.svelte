@@ -153,15 +153,23 @@
   }
   .cell {
     height: 38px;
+    min-height: 38px;
+    max-height: 38px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-bottom: 1px solid var(--line);
+    line-height: 1;
+    /* row separator painted with box-shadow, not border: a border participates
+       in the box height and its sub-pixel rounding accumulates down a column,
+       which shifted the lower rows a few px out of alignment on some displays */
+    box-shadow: inset 0 -1px 0 var(--line);
     font-size: 12px;
     font-weight: 800;
   }
   .cell.head {
     height: 56px;
+    min-height: 56px;
+    max-height: 56px;
     position: sticky;
     top: 0;
     z-index: 2;
@@ -172,7 +180,7 @@
   /* per-month tinted day header (readable even when sorted out of date order) */
   .col .cell.head.day {
     background: hsl(var(--mh, 40) 55% 94%);
-    border-bottom: 2px solid hsl(var(--mh, 40) 45% 82%);
+    box-shadow: inset 0 -2px 0 hsl(var(--mh, 40) 45% 82%);
   }
   .day .mon {
     color: hsl(var(--mh, 40) 45% 34%);

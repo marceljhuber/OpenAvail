@@ -14,6 +14,8 @@
     maxYes,
     focusActive,
     matches,
+    heatmap = false,
+    past = false,
   }: {
     date: Date;
     iso: string;
@@ -23,6 +25,8 @@
     maxYes: number;
     focusActive: boolean;
     matches: boolean;
+    heatmap?: boolean;
+    past?: boolean;
   } = $props();
 
   const summary = $derived<DaySummary>(summarizeDay(votes, iso));
@@ -30,6 +34,11 @@
   const current = $derived<Vote | undefined>(votes[iso]?.[currentUserId]);
   const alpha = $derived(Math.min(0.38, (summary.yes / Math.max(1, maxYes)) * 0.34));
   const isTop = $derived(maxYes > 0 && summary.yes === maxYes);
+
+  // Heatmap: shade each day that has responses from dark-green (most yes) through
+  // yellow to dark-red (fewest), relative to the busiest day. Hue 0=red … 140=green.
+  const heatOn = $derived(heatmap && summary.total > 0 && maxYes > 0);
+  const heatHue = $derived((summary.yes / maxYes) * 140);
 
   const commentN = $derived($commentCounts[iso] ?? 0);
 
@@ -42,10 +51,12 @@
 
 <article
   class="day-cell"
-  class:top-day={isTop}
+  class:top-day={isTop && !heatOn}
   class:match={focusActive && matches}
   class:dim={focusActive && !matches}
-  style="--yes-alpha: {alpha.toFixed(2)}"
+  class:heat={heatOn}
+  class:past
+  style="--yes-alpha: {alpha.toFixed(2)}; --heat-hue: {heatHue.toFixed(0)}"
 >
   <div class="day-head">
     <span class="date-number" data-weekday={WEEKDAYS[mondayBasedDay(date)]}>{date.getDate()}</span>
@@ -100,11 +111,25 @@
   .day-cell.top-day {
     outline: 3px solid rgba(32, 178, 107, 0.28);
   }
+  /* heatmap fill overrides the subtle yes-tint; mixed with the surface so the
+     day's chips/text stay legible in both themes */
+  .day-cell.heat {
+    background: color-mix(
+      in srgb,
+      hsl(var(--heat-hue, 0) 68% 45%) 48%,
+      var(--surface)
+    );
+    border-color: color-mix(in srgb, hsl(var(--heat-hue, 0) 68% 45%) 55%, var(--line));
+  }
   .day-cell.match {
     outline: 3px solid var(--yes);
   }
   .day-cell.dim {
     opacity: 0.32;
+  }
+  /* selected/visible past days are shown greyed so they read as "gone" */
+  .day-cell.past {
+    opacity: 0.55;
   }
   .day-head {
     display: flex;
@@ -163,8 +188,12 @@
   }
   .counts {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 5px;
+  }
+  .counts .pill {
+    flex: 1 1 0;
+    min-width: 0;
   }
   .voter-list {
     flex: 1;

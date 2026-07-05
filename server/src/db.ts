@@ -106,5 +106,19 @@ export function openDb(path: string): DB {
   db.exec("PRAGMA foreign_keys = ON;");
   db.exec("PRAGMA busy_timeout = 5000;");
   db.exec(SCHEMA);
+  migrate(db);
   return db;
+}
+
+/** Idempotent column additions for features added after the initial schema.
+ * (node:sqlite has no migration framework; we probe PRAGMA table_info.) */
+function migrate(db: DB): void {
+  const pollCols = db.prepare(`PRAGMA table_info(polls)`).all() as { name: string }[];
+  if (!pollCols.some((c) => c.name === "closed_at")) {
+    db.exec(`ALTER TABLE polls ADD COLUMN closed_at TEXT`);
+  }
+  if (!pollCols.some((c) => c.name === "mode")) {
+    // 'multi' preserves the original multi-select behaviour for existing polls
+    db.exec(`ALTER TABLE polls ADD COLUMN mode TEXT NOT NULL DEFAULT 'multi'`);
+  }
 }

@@ -86,9 +86,16 @@
       <option value="maybe">Maybe</option>
       <option value="no">No</option>
     </select>
-    {#if focusActive}
-      <button type="button" class="clear" onclick={clearFocus}>clear</button>
-    {/if}
+    <!-- always rendered (space reserved) so appearing/disappearing never
+         reflows the row or shifts the neighbouring controls -->
+    <button
+      type="button"
+      class="clear"
+      class:hidden={!focusActive}
+      onclick={clearFocus}
+      tabindex={focusActive ? 0 : -1}
+      aria-hidden={!focusActive}
+    >clear</button>
   </div>
 
   {#if $filters.view === "timeline"}
@@ -177,6 +184,10 @@
     color: var(--no-ink);
     font-weight: 800;
     font-size: 13px;
+  }
+  .clear.hidden {
+    visibility: hidden;
+    pointer-events: none;
   }
   .seg {
     display: flex;

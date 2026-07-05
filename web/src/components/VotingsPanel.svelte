@@ -1,5 +1,6 @@
 <script lang="ts">
   import { polls, createPoll } from "../lib/stores";
+  import type { PollMode } from "../lib/types";
   import PollCard from "./PollCard.svelte";
 
   const DEFAULTS = ["Pokemon Day", "One Piece Day", "Friends Day"];
@@ -8,6 +9,7 @@
   let title = $state("");
   let options = $state<string[]>([...DEFAULTS]);
   let touched = $state<boolean[]>(DEFAULTS.map(() => false));
+  let mode = $state<PollMode>("multi");
   let busy = $state(false);
   let error = $state<string | null>(null);
 
@@ -38,6 +40,7 @@
     title = "";
     options = [...DEFAULTS];
     touched = DEFAULTS.map(() => false);
+    mode = "multi";
     error = null;
   }
 
@@ -49,6 +52,7 @@
       await createPoll(
         title.trim(),
         options.map((o) => o.trim()).filter((o) => o.length > 0),
+        mode,
       );
       reset();
       creating = false;
@@ -102,6 +106,24 @@
         <button class="add" type="button" onclick={addOption}>+ Add option</button>
       </div>
 
+      <div class="field">
+        <span>Mode</span>
+        <div class="mode-seg">
+          <button
+            type="button"
+            class="seg-btn"
+            class:on={mode === "single"}
+            onclick={() => (mode = "single")}
+          >Single choice</button>
+          <button
+            type="button"
+            class="seg-btn"
+            class:on={mode === "multi"}
+            onclick={() => (mode = "multi")}
+          >Multiple choice</button>
+        </div>
+      </div>
+
       {#if error}<p class="error">{error}</p>{/if}
 
       <div class="actions">
@@ -110,7 +132,9 @@
           {busy ? "Starting…" : "Start voting"}
         </button>
       </div>
-      <p class="hint">Multiple choice · results hidden until each person votes.</p>
+      <p class="hint">
+        {mode === "single" ? "Single choice" : "Multiple choice"} · results hidden until each person votes. Editable later.
+      </p>
     </div>
   {/if}
 
@@ -202,6 +226,28 @@
     min-height: 34px;
     padding: 0 12px;
     font-weight: 800;
+  }
+  .mode-seg {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+  }
+  .mode-seg .seg-btn {
+    flex: 1;
+    min-height: 32px;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 800;
+  }
+  .mode-seg .seg-btn.on {
+    background: var(--btn);
+    color: var(--btn-fg);
   }
   .actions {
     display: flex;

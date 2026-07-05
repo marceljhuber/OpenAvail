@@ -42,11 +42,17 @@ export interface Session {
   expiresAt: string;
 }
 
+export type PollMode = "single" | "multi";
+
 export interface Poll {
   id: string;
   title: string;
   createdBy: string;
   createdAt: string;
+  /** ISO timestamp when an admin/creator ended the voting, else null. */
+  closedAt: string | null;
+  /** 'single' = radio (one pick per person), 'multi' = checkboxes. */
+  mode: PollMode;
 }
 
 export interface PollOption {
@@ -58,7 +64,8 @@ export interface PollOption {
 
 /**
  * A poll as seen by a specific user. Results are blind until the user has
- * voted: when `revealed` is false, `votes` and `totalVoters` are null.
+ * voted OR the poll has been closed: when `revealed` is false, `votes`,
+ * `voters` and `totalVoters` are null.
  */
 export interface PollView {
   id: string;
@@ -66,10 +73,12 @@ export interface PollView {
   createdBy: string;
   createdByName: string;
   createdAt: string;
-  options: { id: string; label: string; votes: number | null }[];
+  options: { id: string; label: string; votes: number | null; voters: string[] | null }[];
   myVotes: string[];
   hasVoted: boolean;
   revealed: boolean;
+  closed: boolean;
+  mode: PollMode;
   totalVoters: number | null;
   canManage: boolean;
 }

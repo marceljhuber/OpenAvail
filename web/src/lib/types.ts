@@ -63,7 +63,8 @@ export interface Comment {
 export interface PollOptionView {
   id: string;
   label: string;
-  votes: number | null; // null until results are revealed (user has voted)
+  votes: number | null; // null until results are revealed (user has voted / poll closed)
+  voters: string[] | null; // names of who picked this option; null while blind
 }
 
 export interface PollView {
@@ -76,6 +77,10 @@ export interface PollView {
   myVotes: string[];
   hasVoted: boolean;
   revealed: boolean;
+  closed: boolean;
+  mode: PollMode;
   totalVoters: number | null;
   canManage: boolean;
 }
+
+export type PollMode = "single" | "multi";

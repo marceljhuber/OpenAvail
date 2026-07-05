@@ -1,7 +1,7 @@
 import { get, writable } from "svelte/store";
 import { api } from "./api";
 import { addMonths, daysInMonth, startOfMonth, toISO } from "./date";
-import type { AppConfig, BoardState, PollView, User, Vote } from "./types";
+import type { AppConfig, BoardState, PollMode, PollView, User, Vote } from "./types";
 
 export type ViewKind = "calendar" | "timeline";
 export type Theme = "light" | "dark";
@@ -16,6 +16,8 @@ export interface Filters {
   focusVote: Vote;
   sortBy: SortKey;
   view: ViewKind;
+  /** calendar heatmap mode: shade each day green→red by how many said yes */
+  heatmap: boolean;
 }
 
 function defaultRange(): { rangeFrom: string; rangeTo: string } {
@@ -70,6 +72,7 @@ export const filters = writable<Filters>({
   focusVote: "yes",
   sortBy: "date",
   view: "calendar",
+  heatmap: false,
 });
 
 let eventSource: EventSource | null = null;
@@ -107,9 +110,33 @@ export async function refreshCommentCounts(): Promise<void> {
   commentCounts.set(await api.commentCounts());
 }
 
-export async function createPoll(title: string, options: string[]): Promise<void> {
-  await api.createPoll(title, options);
+export async function createPoll(
+  title: string,
+  options: string[],
+  mode: PollMode = "multi",
+): Promise<void> {
+  await api.createPoll(title, options, mode);
   await refreshPolls();
+}
+
+function applyPoll(updated: PollView): void {
+  polls.update((list) => list.map((p) => (p.id === updated.id ? updated : p)));
+}
+
+export async function updatePoll(id: string, patch: { title?: string; mode?: PollMode }): Promise<void> {
+  applyPoll(await api.updatePoll(id, patch));
+}
+
+export async function addPollOption(id: string, label: string): Promise<void> {
+  applyPoll(await api.addPollOption(id, label));
+}
+
+export async function renamePollOption(id: string, optionId: string, label: string): Promise<void> {
+  applyPoll(await api.renamePollOption(id, optionId, label));
+}
+
+export async function deletePollOption(id: string, optionId: string): Promise<void> {
+  applyPoll(await api.deletePollOption(id, optionId));
 }
 
 export async function votePoll(id: string, optionIds: string[]): Promise<void> {
@@ -120,6 +147,10 @@ export async function votePoll(id: string, optionIds: string[]): Promise<void> {
 export async function deletePoll(id: string): Promise<void> {
   await api.deletePoll(id);
   polls.update((list) => list.filter((p) => p.id !== id));
+}
+
+export async function closePoll(id: string, reopen = false): Promise<void> {
+  applyPoll(await api.closePoll(id, reopen));
 }
 
 function refreshAll(): void {

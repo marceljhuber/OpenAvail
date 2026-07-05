@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import { board, session, filters } from "../lib/stores";
   import {
     WEEKDAYS,
@@ -13,15 +14,36 @@
   import { dayMatchesFocus } from "../lib/derive";
   import DayCell from "./DayCell.svelte";
 
+  const PAST = 3; // months of history shown above (so you can scroll back)
   let horizon = $state(18); // months rendered ahead; grows as you scroll
-  const start = startOfMonth(new Date());
+
+  const thisMonth = startOfMonth(new Date());
+  const start = addMonths(thisMonth, -PAST);
+  const thisMonthISO = toISO(thisMonth);
+  // midnight today — days before it are rendered greyed out
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
 
   const months = $derived(
-    Array.from({ length: horizon }, (_, i) => addMonths(start, i)),
+    Array.from({ length: horizon + PAST }, (_, i) => addMonths(start, i)),
   );
+
+  let scrollEl = $state<HTMLElement | null>(null);
+
+  // Open on the current month (past months sit above, reachable by scrolling up).
+  onMount(() => {
+    const el = scrollEl?.querySelector(`[data-month="${thisMonthISO}"]`) as HTMLElement | null;
+    if (el && scrollEl) {
+      scrollEl.scrollTop += el.getBoundingClientRect().top - scrollEl.getBoundingClientRect().top;
+    }
+  });
 
   const currentUserId = $derived($session?.id ?? "");
   const focusActive = $derived($filters.focusMembers.length > 0);
+
+  function toggleHeatmap() {
+    filters.update((f) => ({ ...f, heatmap: !f.heatmap }));
+  }
 
   const maxYes = $derived.by(() => {
     let m = 0;
@@ -37,6 +59,7 @@
     date?: Date;
     iso?: string;
     matches?: boolean;
+    past?: boolean;
   }
 
   function cellsFor(month: Date): Cell[] {
@@ -51,6 +74,7 @@
         blank: false,
         date,
         iso,
+        past: date < todayStart,
         matches: dayMatchesFocus($board.votes, iso, $filters.focusMembers, $filters.focusVote),
       });
     }
@@ -65,9 +89,30 @@
   }
 </script>
 
-<div class="calendar-scroll" onscroll={onScroll}>
+<div class="cal-tools">
+  <button
+    type="button"
+    class="heat-toggle"
+    class:on={$filters.heatmap}
+    onclick={toggleHeatmap}
+    aria-pressed={$filters.heatmap}
+    title="Shade each day green→red by how many said yes"
+  >
+    🔥 Heatmap
+  </button>
+  {#if $filters.heatmap}
+    <div class="heat-legend" aria-hidden="true">
+      <span>fewer</span>
+      <span class="scale"></span>
+      <span>most yes</span>
+    </div>
+  {/if}
+</div>
+
+<div class="calendar-scroll" bind:this={scrollEl} onscroll={onScroll}>
   {#each months as month (toISO(month))}
-    <section class="month-card">
+    {@const isPastMonth = toISO(month) < thisMonthISO}
+    <section class="month-card" class:past-month={isPastMonth} data-month={toISO(month)}>
       <h3 class="month-title">{formatMonthYear(month)}</h3>
       <div class="weekday-grid">
         {#each WEEKDAYS as wd (wd)}
@@ -88,6 +133,8 @@
               {maxYes}
               {focusActive}
               matches={cell.matches!}
+              heatmap={$filters.heatmap}
+              past={cell.past!}
             />
           {/if}
         {/each}
@@ -97,6 +144,51 @@
 </div>
 
 <style>
+  .cal-tools {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .heat-toggle {
+    min-height: 34px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0 14px;
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 13px;
+    font-weight: 800;
+  }
+  .heat-toggle.on {
+    background: var(--btn);
+    color: var(--btn-fg);
+    border-color: var(--btn);
+  }
+  .heat-legend {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .heat-legend .scale {
+    width: 120px;
+    height: 10px;
+    border-radius: 999px;
+    /* red → yellow → green, matching the day hue scale (0 … 140) */
+    background: linear-gradient(
+      90deg,
+      hsl(0 68% 45%),
+      hsl(45 68% 45%),
+      hsl(90 68% 45%),
+      hsl(140 68% 45%)
+    );
+  }
   .calendar-scroll {
     max-height: 76vh;
     overflow: auto;
@@ -104,6 +196,9 @@
     gap: 18px;
     padding-right: 6px;
     scroll-behavior: smooth;
+  }
+  .month-card.past-month .month-title {
+    opacity: 0.5;
   }
   .month-card {
     border: 1px solid var(--line);
