@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import { board, session, filters } from "../lib/stores";
   import {
     weekdayLabels,
@@ -12,28 +12,38 @@
   } from "../lib/date";
   import { summarizeDay } from "../lib/vote";
   import { dayMatchesFocus } from "../lib/derive";
+  import { monthHue } from "../lib/dayEvents";
   import { t, localeTag } from "../lib/i18n";
   import DayCell from "./DayCell.svelte";
 
-  const PAST = 3; // months of history shown above (so you can scroll back)
-  let horizon = $state(18); // months rendered ahead; grows as you scroll
+  // The calendar is infinite in BOTH directions: forward to plan, backward to
+  // record what happened. Both horizons grow as you approach either end.
+  let horizon = $state(18); // months rendered ahead
+  let past = $state(3); // months of history rendered above
 
   const thisMonth = startOfMonth(new Date());
-  const start = addMonths(thisMonth, -PAST);
   const thisMonthISO = toISO(thisMonth);
   // midnight today — days before it are rendered greyed out
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
   const months = $derived(
-    Array.from({ length: horizon + PAST }, (_, i) => addMonths(start, i)),
+    Array.from({ length: horizon + past }, (_, i) => addMonths(thisMonth, i - past)),
   );
 
   let scrollEl = $state<HTMLElement | null>(null);
 
+  /** True on narrow screens, where the calendar is scrolled by the page itself
+   * rather than by its own container (see the ≤900px rules below). */
+  function pageScrolls(): boolean {
+    return !scrollEl || scrollEl.scrollHeight <= scrollEl.clientHeight + 1;
+  }
+
   function scrollToCurrentMonth() {
     const el = scrollEl?.querySelector(`[data-month="${thisMonthISO}"]`) as HTMLElement | null;
-    if (el && scrollEl) {
+    if (!el) return;
+    if (pageScrolls()) el.scrollIntoView({ block: "start" });
+    else if (scrollEl) {
       scrollEl.scrollTop += el.getBoundingClientRect().top - scrollEl.getBoundingClientRect().top;
     }
   }
@@ -88,18 +98,56 @@
     return cells;
   }
 
+  const CAP = 600; // ~50 years each way, effectively infinite
+
+  function growForward() {
+    horizon = Math.min(horizon + 12, CAP);
+  }
+
+  /**
+   * Prepending months pushes everything down, so measure the document/container
+   * height across the update and add the difference back — otherwise the view
+   * jumps and you can never actually reach older months.
+   */
+  let growingBack = false;
+  async function growBack(el: HTMLElement | null) {
+    if (growingBack || past >= CAP) return;
+    growingBack = true;
+    const heightBefore = el ? el.scrollHeight : document.documentElement.scrollHeight;
+    past = Math.min(past + 12, CAP);
+    await tick();
+    const heightAfter = el ? el.scrollHeight : document.documentElement.scrollHeight;
+    const delta = heightAfter - heightBefore;
+    if (el) el.scrollTop += delta;
+    else window.scrollBy(0, delta);
+    growingBack = false;
+  }
+
   function onScroll(e: Event) {
     const el = e.currentTarget as HTMLElement;
-    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 600) {
-      horizon = Math.min(horizon + 12, 600); // ~50 years cap, effectively infinite
-    }
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 600) growForward();
+    else if (el.scrollTop < 400) growBack(el);
+  }
+
+  /** Mobile scrolls the page, not the container, so watch the window too. */
+  function onWindowScroll() {
+    if (!pageScrolls()) return;
+    const doc = document.documentElement;
+    if (window.scrollY + window.innerHeight >= doc.scrollHeight - 600) growForward();
+    else if (window.scrollY < 400) growBack(null);
   }
 </script>
+
+<svelte:window onscroll={onWindowScroll} />
 
 <!-- single root element so the parent .cal-grid places the whole calendar in
      one grid cell (two roots leaked the scroll area into the sidebar column) -->
 <div class="calendar">
   <div class="cal-tools">
+    <!-- the calendar scrolls infinitely both ways, so offer a way back -->
+    <button type="button" class="heat-toggle" onclick={scrollToCurrentMonth}>
+      {$t("cal.today")}
+    </button>
     <button
       type="button"
       class="heat-toggle"
@@ -122,7 +170,12 @@
   <div class="calendar-scroll" bind:this={scrollEl} onscroll={onScroll}>
   {#each months as month (toISO(month))}
     {@const isPastMonth = toISO(month) < thisMonthISO}
-    <section class="month-card" class:past-month={isPastMonth} data-month={toISO(month)}>
+    <section
+      class="month-card"
+      class:past-month={isPastMonth}
+      data-month={toISO(month)}
+      style="--month-hue: {monthHue(month.getMonth())}"
+    >
       <h3 class="month-title">{formatMonthYear(month, $localeTag)}</h3>
       <div class="weekday-grid">
         {#each weekdayLabels($localeTag) as wd, i (i)}
@@ -207,29 +260,39 @@
   }
   .calendar-scroll {
     max-height: 76vh;
+    /* svh keeps mobile browser chrome from clipping the last row */
+    max-height: min(76vh, 100svh - 230px);
     overflow: auto;
+    overscroll-behavior: contain;
     display: grid;
     gap: 18px;
     padding-right: 6px;
     scroll-behavior: smooth;
   }
   .month-card.past-month .month-title {
-    opacity: 0.5;
+    opacity: 0.75;
   }
+  /* each month carries a faint hue of its own so they read as separate blocks
+     while scrolling (shared scale with the timeline's month bands) */
   .month-card {
-    border: 1px solid var(--line);
+    --month-tint: hsl(var(--month-hue, 0) 60% 50%);
+    border: 1px solid color-mix(in srgb, var(--month-tint) 18%, var(--line));
     border-radius: 22px;
     padding: 16px;
-    background: var(--surface-a);
+    background: color-mix(in srgb, var(--month-tint) var(--month-mix), var(--surface-a));
   }
   .month-title {
     position: sticky;
     top: 0;
-    z-index: 5;
+    z-index: var(--z-sticky);
     margin: -16px -16px 12px;
     padding: 14px 16px;
     font-size: 22px;
-    background: linear-gradient(var(--header), var(--header));
+    background: color-mix(
+      in srgb,
+      hsl(var(--month-hue, 0) 60% 50%) calc(var(--month-mix) * 1.6),
+      var(--header)
+    );
     backdrop-filter: blur(8px);
     border-bottom: 1px solid var(--line);
     border-radius: 22px 22px 0 0;
@@ -251,7 +314,9 @@
   .blank {
     visibility: hidden;
   }
-  @media (max-width: 720px) {
+  @media (max-width: 900px) {
+    /* the Mon–Sun header stops making sense once the week no longer fits;
+       DayCell shows a per-day weekday tag below this width instead */
     .weekday-grid {
       display: none;
     }
@@ -260,6 +325,22 @@
     }
     .calendar-scroll {
       max-height: none;
+      overflow: visible;
+      padding-right: 0;
+    }
+    .month-card {
+      padding: 12px;
+    }
+    .month-title {
+      margin: -12px -12px 10px;
+      padding: 12px;
+      font-size: 18px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .days-grid {
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 </style>

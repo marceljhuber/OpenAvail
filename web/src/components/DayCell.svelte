@@ -1,8 +1,10 @@
 <script lang="ts">
   import type { DaySummary, User, Vote, VotesByDate } from "../lib/types";
   import { summarizeDay, getDayVoters } from "../lib/vote";
-  import { commentCounts, selectedDay } from "../lib/stores";
+  import { commentCounts, dayEvents, selectedDay, session } from "../lib/stores";
+  import { colorStyle } from "../lib/dayEvents";
   import { t, localeTag } from "../lib/i18n";
+  import HoverCard from "./HoverCard.svelte";
   import VoteButtons from "./VoteButtons.svelte";
 
   let {
@@ -41,11 +43,17 @@
   const heatHue = $derived((summary.yes / maxYes) * 140);
 
   const commentN = $derived($commentCounts[iso] ?? 0);
+  const event = $derived($dayEvents[iso] ?? null);
+  const isAdmin = $derived($session?.role === "admin");
 
   const voterRows: { vote: Vote; names: string[] }[] = $derived(
     (["yes", "maybe", "no"] as Vote[])
       .map((v) => ({ vote: v, names: voters[v] }))
       .filter((r) => r.names.length > 0),
+  );
+
+  const longDate = $derived(
+    date.toLocaleDateString($localeTag, { weekday: "long", day: "numeric", month: "long" }),
   );
 </script>
 
@@ -56,11 +64,23 @@
   class:dim={focusActive && !matches}
   class:heat={heatOn}
   class:past
-  style="--yes-alpha: {alpha.toFixed(2)}; --heat-hue: {heatHue.toFixed(0)}"
+  class:has-event={!!event}
+  style="--yes-alpha: {alpha.toFixed(2)}; --heat-hue: {heatHue.toFixed(0)}; {event
+    ? colorStyle(event.color)
+    : ''}"
 >
   <div class="day-head">
-    <span class="date-number">{date.getDate()}</span>
+    <!-- the date opens the day: comments, and what happened on it -->
+    <button
+      class="date-number"
+      onclick={() => selectedDay.set(iso)}
+      title={longDate}
+      aria-label={longDate}
+    >
+      {date.getDate()}
+    </button>
     <span class="weekday-tag">{date.toLocaleDateString($localeTag, { weekday: "short" })}</span>
+    <span class="spacer"></span>
     <span class="yes-score" title={$t("cal.saidYes", { yes: summary.yes, total: members.length })}>
       {summary.yes}/{members.length}
     </span>
@@ -74,24 +94,41 @@
       💬{commentN > 0 ? ` ${commentN}` : ""}
     </button>
   </div>
-  <!-- counts double as the hover/focus trigger: names stay hidden until then -->
-  <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-  <div class="counts-wrap" tabindex={summary.total > 0 ? 0 : -1} class:has-voters={summary.total > 0}>
-    <div class="counts">
-      <span class="pill yes">{summary.yes}</span>
-      <span class="pill maybe">{summary.maybe}</span>
-      <span class="pill no">{summary.no}</span>
-    </div>
-    {#if summary.total > 0}
-      <div class="voter-pop" role="tooltip">
-        {#each voterRows as row (row.vote)}
-          {#each row.names as name (name)}
-            <div class="who"><span class="dot {row.vote}"></span>{name}</div>
-          {/each}
-        {/each}
+
+  {#if event}
+    <button class="ev-chip" onclick={() => selectedDay.set(iso)} title={event.title}>
+      <span class="ev-dot" aria-hidden="true"></span>
+      <span class="ev-title">{event.title}</span>
+    </button>
+  {:else if isAdmin}
+    <button class="ev-add" onclick={() => selectedDay.set(iso)} title={$t("ev.add")}>
+      + {$t("ev.eyebrow")}
+    </button>
+  {/if}
+
+  <!-- counts double as the hover/focus/tap trigger: names stay hidden until then -->
+  <HoverCard align="center" disabled={summary.total === 0} label={$t("poll.whoVoted")}>
+    {#snippet trigger()}
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+      <div
+        class="counts-wrap"
+        tabindex={summary.total > 0 ? 0 : -1}
+        class:has-voters={summary.total > 0}
+      >
+        <span class="pill yes">{summary.yes}</span>
+        <span class="pill maybe">{summary.maybe}</span>
+        <span class="pill no">{summary.no}</span>
       </div>
-    {/if}
-  </div>
+    {/snippet}
+    {#snippet content()}
+      {#each voterRows as row (row.vote)}
+        {#each row.names as name (name)}
+          <div class="who"><span class="dot {row.vote}"></span>{name}</div>
+        {/each}
+      {/each}
+    {/snippet}
+  </HoverCard>
+
   <VoteButtons date={iso} {current} />
 </article>
 
@@ -104,6 +141,7 @@
     border: 1px solid var(--line);
     border-radius: 16px;
     padding: 10px;
+    min-width: 0;
     /* blend the "yes" tint into the surface so text stays readable in both
        light and dark themes (a translucent bright-green overlay washed out
        text in dark mode) */
@@ -115,7 +153,11 @@
     transition: opacity 0.15s, outline-color 0.15s, background 0.15s;
   }
   .day-cell.top-day {
-    outline: 3px solid rgba(32, 178, 107, 0.28);
+    outline: 3px solid color-mix(in srgb, var(--yes) 30%, transparent);
+  }
+  /* a recorded event tints the whole cell border in its colour */
+  .day-cell.has-event {
+    border-color: color-mix(in srgb, var(--ev) 45%, var(--line));
   }
   /* heatmap fill overrides the subtle yes-tint; mixed with the surface so the
      day's chips/text stay legible in both themes */
@@ -133,15 +175,26 @@
   .day-cell.dim {
     opacity: 0.32;
   }
-  /* selected/visible past days are shown greyed so they read as "gone" */
+  /* Past days are where the Events feature lives, so they must stay fully
+     readable. Fading the whole cell dragged every label under 4.5:1, so "past"
+     is signalled with a dashed border and a quieter date chip instead — no
+     opacity, no contrast cost. */
   .day-cell.past {
-    opacity: 0.55;
+    border-style: dashed;
   }
+  .day-cell.past .date-number {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+
   .day-head {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 6px;
+    min-width: 0;
+  }
+  .spacer {
+    flex: 1;
     min-width: 0;
   }
   .date-number {
@@ -150,10 +203,16 @@
     min-width: 30px;
     height: 30px;
     padding: 0 6px;
+    border: 0;
     border-radius: 10px;
     background: var(--chip);
+    color: var(--ink);
     font-weight: 900;
     flex: 0 0 auto;
+  }
+  .date-number:hover {
+    background: var(--btn);
+    color: var(--btn-fg);
   }
   /* the calendar's Mon–Sun header is hidden on mobile (see CalendarView),
      so surface each day's weekday inline there instead */
@@ -167,73 +226,113 @@
     flex: 0 0 auto;
   }
   .yes-score {
+    flex: 0 0 auto;
     color: var(--yes-ink);
     font-weight: 800;
     font-size: 12px;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    min-width: 0;
-    flex: 1;
-    text-align: right;
   }
   .cbtn {
     flex: 0 0 auto;
     border: 0;
     background: transparent;
-    padding: 0 2px;
+    padding: 2px 4px;
     font-size: 12px;
     font-weight: 800;
+    /* no opacity fade: it put this control under 3:1 in every palette.
+       --muted already reads as secondary and clears 4.5 on the cell. */
     color: var(--muted);
-    opacity: 0.6;
     line-height: 1;
   }
   .cbtn.has {
-    opacity: 1;
     color: var(--ink);
   }
+
+  .ev-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    min-width: 0;
+    min-height: 26px;
+    padding: 0 9px;
+    border: 1px solid color-mix(in srgb, var(--ev) 42%, var(--line));
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--ev) 18%, var(--surface));
+    /* mostly --ink with a hint of the event colour — the reverse fails 4.5:1
+       against the chip's own tinted fill */
+    color: color-mix(in srgb, var(--ev) 45%, var(--ink));
+    font-size: 12px;
+    font-weight: 800;
+    text-align: left;
+  }
+  .ev-chip:hover {
+    background: color-mix(in srgb, var(--ev) 30%, var(--surface));
+  }
+  .ev-dot {
+    flex: 0 0 auto;
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: var(--ev);
+  }
+  /* two lines rather than one hard ellipsis — day columns are narrow */
+  .ev-title {
+    min-width: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.25;
+  }
+
+  /* admins get a quiet "record something here" affordance on hover. Hidden
+     entirely where there is no hover: tapping the date opens the same modal,
+     and a dashed button on all 31 days is just noise. */
+  .ev-add {
+    display: none;
+    align-self: start;
+    min-height: 24px;
+    padding: 0 8px;
+    border: 1px dashed var(--line);
+    border-radius: 9px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 800;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  @media (hover: hover) {
+    .ev-add {
+      display: block;
+    }
+    .day-cell:hover .ev-add,
+    .day-cell:focus-within .ev-add,
+    .ev-add:focus-visible {
+      opacity: 1;
+    }
+  }
+
   /* counts fill the middle so the vote buttons stay pinned to the bottom */
   .counts-wrap {
-    position: relative;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 5px;
     flex: 1;
+    align-items: flex-start;
   }
   .counts-wrap.has-voters {
     cursor: help;
   }
-  .counts {
-    display: flex;
-    flex-wrap: nowrap;
-    gap: 5px;
-  }
-  .counts .pill {
+  .counts-wrap .pill {
     flex: 1 1 0;
     min-width: 0;
   }
-  /* voter names: hidden by default, shown as a floating white card on hover/focus
-     (same treatment as the votings cards) */
-  .voter-pop {
-    position: absolute;
-    top: calc(100% + 4px);
-    left: 0;
-    right: 0;
-    z-index: 30;
-    display: none;
-    grid-auto-flow: row;
-    gap: 2px;
-    min-width: 140px;
-    max-height: 220px;
-    overflow: auto;
-    padding: 7px;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    box-shadow: var(--shadow);
-  }
-  .counts-wrap:hover .voter-pop,
-  .counts-wrap:focus-within .voter-pop {
-    display: grid;
-  }
-  .voter-pop .who {
+
+  /* voter rows live inside the portaled hover card, hence :global */
+  :global(.hc-card .who) {
     display: flex;
     align-items: center;
     gap: 7px;
@@ -242,30 +341,41 @@
     font-size: 12.5px;
     font-weight: 700;
     color: var(--ink);
-    white-space: nowrap;
   }
-  .voter-pop .who:hover {
+  :global(.hc-card .who:hover) {
     background: var(--chip);
   }
-  .voter-pop .dot {
+  :global(.hc-card .who .dot) {
     width: 9px;
     height: 9px;
     border-radius: 999px;
     flex: 0 0 auto;
   }
-  .voter-pop .dot.yes {
+  :global(.hc-card .who .dot.yes) {
     background: var(--yes);
   }
-  .voter-pop .dot.maybe {
+  :global(.hc-card .who .dot.maybe) {
     background: var(--maybe);
   }
-  .voter-pop .dot.no {
+  :global(.hc-card .who .dot.no) {
     background: var(--no);
   }
 
-  @media (max-width: 720px) {
+  @media (max-width: 900px) {
     .weekday-tag {
       display: inline;
+    }
+  }
+
+  /* single-column phone layout: the fixed 168px floor makes every day a
+     full screen of scrolling, so let cells shrink to their content */
+  @media (max-width: 480px) {
+    .day-cell {
+      min-height: 0;
+      gap: 6px;
+    }
+    .counts-wrap {
+      flex: 0 0 auto;
     }
   }
 </style>

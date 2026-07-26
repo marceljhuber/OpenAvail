@@ -2,8 +2,9 @@ import { describe, expect, it } from "vitest";
 import { enumerateDays, mondayBasedDay, toISO } from "../src/lib/date";
 import { summarizeDay } from "../src/lib/vote";
 import { dayMatchesFocus, focusYesCount, sortDays } from "../src/lib/derive";
+import { linkIcon, linkKind, linkLabel, monthHue, prefillAttendees } from "../src/lib/dayEvents";
 import type { Filters } from "../src/lib/stores";
-import type { VotesByDate } from "../src/lib/types";
+import type { User, VotesByDate } from "../src/lib/types";
 
 describe("date helpers", () => {
   it("toISO formats local dates", () => {
@@ -46,6 +47,7 @@ describe("focus filter + sort", () => {
     focusVote: "yes",
     sortBy: "date",
     view: "calendar",
+    heatmap: false,
   };
 
   it("dayMatchesFocus keeps only days where Rainer voted yes", () => {
@@ -66,5 +68,57 @@ describe("focus filter + sort", () => {
     const filtered = days.filter((d) => dayMatchesFocus(votes, toISO(d), ["rainer"], "yes"));
     const sorted = sortDays(filtered, votes, { ...base, sortBy: "yes" }).map(toISO);
     expect(sorted).toEqual(["2026-07-01", "2026-07-02"]);
+  });
+});
+
+describe("day event links", () => {
+  it("classifies known hosts and falls back to a generic link", () => {
+    expect(linkKind("https://www.youtube.com/watch?v=x")).toBe("youtube");
+    expect(linkKind("https://youtu.be/x")).toBe("youtube");
+    expect(linkKind("https://instagram.com/p/abc")).toBe("instagram");
+    expect(linkKind("https://www.tiktok.com/@a/video/1")).toBe("tiktok");
+    expect(linkKind("https://example.com/thing")).toBe("link");
+    expect(linkKind("not a url")).toBe("link");
+  });
+
+  it("gives every kind an icon", () => {
+    expect(linkIcon("https://youtu.be/x")).not.toBe(linkIcon("https://example.com"));
+  });
+
+  it("labels a link with its own label, else the bare hostname", () => {
+    expect(linkLabel("https://youtu.be/x", "recap")).toBe("recap");
+    expect(linkLabel("https://www.example.com/a/b", "")).toBe("example.com");
+    expect(linkLabel("https://www.example.com/a/b", "   ")).toBe("example.com");
+  });
+});
+
+describe("attendee prefill", () => {
+  const members: User[] = [
+    { id: "u1", email: "a@x.com", name: "Ann", picture: "", role: "member" },
+    { id: "u2", email: "b@x.com", name: "Bo", picture: "", role: "member" },
+    { id: "u3", email: "c@x.com", name: "Cy", picture: "", role: "member" },
+  ];
+
+  it("seeds from the day's yes-voters only", () => {
+    const votes: VotesByDate = { "2026-07-01": { u1: "yes", u2: "maybe", u3: "yes" } };
+    expect(prefillAttendees(votes, members, "2026-07-01")).toEqual([
+      { id: "member:u1", userId: "u1", name: "Ann" },
+      { id: "member:u3", userId: "u3", name: "Cy" },
+    ]);
+  });
+
+  it("is empty for a day nobody said yes to", () => {
+    expect(prefillAttendees({ "2026-07-01": { u1: "no" } }, members, "2026-07-01")).toEqual([]);
+    expect(prefillAttendees({}, members, "2026-07-01")).toEqual([]);
+  });
+});
+
+describe("monthHue", () => {
+  it("is stable per month and spans the wheel", () => {
+    expect(monthHue(0)).toBe(0);
+    expect(monthHue(6)).toBe(180);
+    expect(monthHue(11)).toBe(330);
+    // same month in a different year gets the same tint
+    expect(monthHue(12)).toBe(monthHue(0));
   });
 });

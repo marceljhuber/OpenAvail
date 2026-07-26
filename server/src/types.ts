@@ -92,6 +92,64 @@ export interface Comment {
   createdAt: string;
 }
 
+// ─── day events ──────────────────────────────────────────────────────────────
+
+/** Palette tokens; the browser maps these to --ev-* CSS variables per theme. */
+export const EVENT_COLORS = [
+  "sage",
+  "amber",
+  "coral",
+  "plum",
+  "ocean",
+  "forest",
+  "rose",
+  "slate",
+] as const;
+export type EventColor = (typeof EVENT_COLORS)[number];
+export const DEFAULT_EVENT_COLOR: EventColor = "sage";
+
+export interface DayEventLink {
+  id: string;
+  url: string;
+  /** optional human label; the client falls back to the hostname */
+  label: string;
+}
+
+export interface DayEventAttendee {
+  id: string;
+  /** board member id, or null for a free-text guest */
+  userId: string | null;
+  name: string;
+}
+
+/** One event per date — "One Piece Ketchup Day", etc. */
+export interface DayEvent {
+  date: string;
+  title: string;
+  color: EventColor;
+  description: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** A day event plus its children and the requesting user's permissions. */
+export interface DayEventView extends DayEvent {
+  createdByName: string;
+  links: DayEventLink[];
+  attendees: DayEventAttendee[];
+  canManage: boolean;
+}
+
+/** What the client may set on a day event (children are replaced wholesale). */
+export interface DayEventInput {
+  title: string;
+  color: EventColor;
+  description: string;
+  links: { url: string; label?: string }[];
+  attendees: { userId?: string | null; name?: string }[];
+}
+
 /** votes[isoDate][userId] = Vote */
 export type VotesByDate = Record<string, Record<string, Vote>>;
 

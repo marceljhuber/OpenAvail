@@ -10,6 +10,7 @@
   } from "../lib/stores";
   import type { PollMode, PollView } from "../lib/types";
   import { t } from "../lib/i18n";
+  import HoverCard from "./HoverCard.svelte";
 
   let { poll }: { poll: PollView } = $props();
 
@@ -199,24 +200,26 @@
           <span class="check" class:radio={poll.mode === "single"} aria-hidden="true">{mine ? "✓" : ""}</span>
           <span class="label">{opt.label}</span>
           {#if poll.revealed}
-            {#if voters.length > 0}
+            <span class="count">{opt.votes}</span>
+            <span class="bar" style="--w:{((opt.votes ?? 0) / maxVotes) * 100}%"></span>
+          {/if}
+        </button>
+        <!-- names hidden by default; revealed as a floating card on hover/focus/tap -->
+        {#if poll.revealed && voters.length > 0}
+          <HoverCard align="end" label={$t("poll.whoVoted")}>
+            {#snippet trigger()}
               <span
                 class="who-badge"
                 tabindex="0"
                 role="button"
                 aria-label={$t("poll.whoAria", { n: voters.length })}
-                title={$t("poll.whoVoted")}
-              >👤</span>
-            {/if}
-            <span class="count">{opt.votes}</span>
-            <span class="bar" style="--w:{((opt.votes ?? 0) / maxVotes) * 100}%"></span>
-          {/if}
-        </button>
-        <!-- names hidden by default; revealed as a little card on hover/focus -->
-        {#if poll.revealed && voters.length > 0}
-          <div class="voters-pop" role="tooltip">
-            {#each voters as name (name)}<span class="who">{name}</span>{/each}
-          </div>
+                title={$t("poll.whoVoted")}>👤 {voters.length}</span
+              >
+            {/snippet}
+            {#snippet content()}
+              {#each voters as name (name)}<span class="poll-who">{name}</span>{/each}
+            {/snippet}
+          </HoverCard>
         {/if}
       </li>
     {/each}
@@ -319,9 +322,14 @@
   }
   .opt-li {
     position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
   }
-  /* small "👤 n" affordance inside the option row */
+  /* small "👤 n" affordance beside the option row */
   .who-badge {
+    flex: 0 0 auto;
     display: inline-flex;
     align-items: center;
     gap: 3px;
@@ -330,49 +338,29 @@
     color: var(--muted);
     background: var(--chip);
     border-radius: 999px;
-    padding: 1px 8px;
+    padding: 3px 8px;
     cursor: help;
   }
-  /* voter names: hidden by default, shown as a floating white card on hover/focus */
-  .voters-pop {
-    position: absolute;
-    top: calc(100% - 4px);
-    right: 8px;
-    z-index: 30;
-    display: none;
-    grid-auto-flow: row;
-    gap: 2px;
-    min-width: 150px;
-    max-height: 240px;
-    overflow: auto;
-    padding: 7px;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    box-shadow: var(--shadow);
-  }
-  .opt-li:hover .voters-pop,
-  .opt-li:focus-within .voters-pop {
-    display: grid;
-  }
-  .voters-pop .who {
+  /* voter rows live in the portaled hover card, hence :global */
+  :global(.hc-card .poll-who) {
+    display: block;
     padding: 5px 9px;
     border-radius: 8px;
     font-size: 12.5px;
     font-weight: 700;
     color: var(--ink);
-    white-space: nowrap;
   }
-  .voters-pop .who:hover {
+  :global(.hc-card .poll-who:hover) {
     background: var(--chip);
   }
   .opt {
     position: relative;
-    width: 100%;
+    flex: 1;
+    min-width: 0;
     display: flex;
     align-items: center;
     gap: 10px;
-    min-height: 42px;
+    min-height: var(--tap);
     padding: 0 12px;
     border: 1px solid var(--line);
     border-radius: 12px;
@@ -419,7 +407,7 @@
   .opt.on .check {
     border-color: var(--yes);
     background: var(--yes);
-    color: white;
+    color: var(--on-yes);
   }
   /* --- inline editor --- */
   .editor {
@@ -502,10 +490,25 @@
   }
   .label {
     flex: 1;
+    min-width: 0;
     overflow-wrap: anywhere;
   }
   .count {
+    flex: 0 0 auto;
     font-variant-numeric: tabular-nums;
     font-weight: 900;
+  }
+
+  @media (max-width: 640px) {
+    .poll {
+      padding: 14px;
+    }
+    header {
+      flex-wrap: wrap;
+    }
+    .manage {
+      width: 100%;
+      justify-content: flex-end;
+    }
   }
 </style>

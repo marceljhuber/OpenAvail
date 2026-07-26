@@ -1,0 +1,18 @@
+{
+  "name": "OpenAvail",
+  "short_name": "OpenAvail",
+  "description": "Find the days everyone is free — and remember what happened on them.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f6f1e8",
+  "theme_color": "#f6f1e8",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

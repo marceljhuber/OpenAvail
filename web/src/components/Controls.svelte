@@ -172,7 +172,7 @@
     font-weight: 700;
   }
   .chip.on {
-    color: white;
+    color: var(--on-yes);
     background: var(--yes);
     border-color: var(--yes);
   }
@@ -220,7 +220,7 @@
     color: var(--muted);
   }
 
-  @media (max-width: 720px) {
+  @media (max-width: 900px) {
     .controls {
       flex-direction: column;
       align-items: stretch;
@@ -238,6 +238,9 @@
     }
     .seg-btn {
       flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
   }
 </style>

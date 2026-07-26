@@ -3,6 +3,7 @@
   import { enumerateDays, formatLongDate, toISO } from "../lib/date";
   import { summarizeDay, VOTE_LABEL } from "../lib/vote";
   import { dayMatchesFocus, sortDays } from "../lib/derive";
+  import { monthHue } from "../lib/dayEvents";
   import { t, localeTag } from "../lib/i18n";
   import type { Vote } from "../lib/types";
 
@@ -41,8 +42,8 @@
 
   // Distinct light hue per calendar month so columns stay groupable even when
   // sorted out of date order.
-  function monthHue(d: Date): number {
-    return ((d.getFullYear() * 12 + d.getMonth()) * 53) % 360;
+  function hueOf(d: Date): number {
+    return monthHue(d.getMonth());
   }
 
   function voteOf(memberId: string, iso: string): Vote | undefined {
@@ -185,7 +186,7 @@
           {@const iso = toISO(day)}
           {@const s = summarizeDay($board.votes, iso)}
           <div class="col" class:month-start={isMonthStart(day)} style="width:{COL_W}px">
-            <div class="cell head day" style="--mh:{monthHue(day)}" title={formatLongDate(day, $localeTag)}>
+            <div class="cell head day" style="--mh:{hueOf(day)}" title={formatLongDate(day, $localeTag)}>
               <span class="mon">{day.toLocaleDateString($localeTag, { month: "short" })}</span>
               <span class="dnum">{day.getDate()}</span>
               <span class="dow">{day.toLocaleDateString($localeTag, { weekday: "narrow" })}</span>
@@ -346,13 +347,18 @@
     flex-direction: column;
     gap: 0;
   }
-  /* per-month tinted day header (readable even when sorted out of date order) */
+  /* Per-month tinted day header (readable even when sorted out of date order).
+     Mixed into the surface rather than a fixed light hsl(), so it works in every
+     palette — and it shares the hue scale with the calendar's month cards. */
   .col .cell.head.day {
-    background: hsl(var(--mh, 40) 55% 94%);
-    box-shadow: inset 0 -2px 0 hsl(var(--mh, 40) 45% 82%);
+    --mtint: hsl(var(--mh, 40) 60% 50%);
+    background: color-mix(in srgb, var(--mtint) calc(var(--month-mix) * 2), var(--header));
+    box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--mtint) 45%, var(--line));
   }
+  /* month hue as a tint of --ink, not the other way round: at >45% accent the
+     label falls under 4.5:1 on its own tinted header */
   .day .mon {
-    color: hsl(var(--mh, 40) 45% 34%);
+    color: color-mix(in srgb, hsl(var(--mh, 40) 60% 50%) 38%, var(--ink));
     font-size: 10px;
     font-weight: 900;
     text-transform: uppercase;
@@ -399,8 +405,9 @@
     font-size: 13px;
     font-weight: 800;
   }
+  /* --muted is tuned against --surface, not against the tinted day header */
   .day .dow {
-    color: var(--muted);
+    color: color-mix(in srgb, var(--muted) 55%, var(--ink));
     font-weight: 700;
     font-size: 10px;
   }
@@ -408,22 +415,22 @@
     color: var(--muted);
   }
   .vote.yes {
-    color: white;
+    color: var(--on-yes);
     background: var(--yes);
   }
   .vote.maybe {
-    color: #3d2c00;
+    color: var(--on-maybe);
     background: var(--maybe);
   }
   .vote.no {
-    color: white;
+    color: var(--on-no);
     background: var(--no);
   }
   .vote.empty {
     background: var(--surface);
   }
 
-  @media (max-width: 620px) {
+  @media (max-width: 640px) {
     .timeline {
       padding: 12px;
     }
@@ -438,6 +445,7 @@
     }
     .grid-scroll {
       max-height: 66vh;
+      max-height: min(66vh, 100svh - 260px);
     }
   }
 </style>

@@ -84,3 +84,57 @@ export interface PollView {
 }
 
 export type PollMode = "single" | "multi";
+
+// ─── day events ──────────────────────────────────────────────────────────────
+// Mirrors server/src/types.ts (types are duplicated across workspaces by design).
+
+export const EVENT_COLORS = [
+  "sage",
+  "amber",
+  "coral",
+  "plum",
+  "ocean",
+  "forest",
+  "rose",
+  "slate",
+] as const;
+export type EventColor = (typeof EVENT_COLORS)[number];
+export const DEFAULT_EVENT_COLOR: EventColor = "sage";
+
+export interface DayEventLink {
+  id: string;
+  url: string;
+  /** optional human label; falls back to the hostname when empty */
+  label: string;
+}
+
+export interface DayEventAttendee {
+  id: string;
+  /** board member id, or null for a free-text guest */
+  userId: string | null;
+  name: string;
+}
+
+/** One event per date, as seen by the current user. */
+export interface DayEventView {
+  date: string;
+  title: string;
+  color: EventColor;
+  description: string;
+  createdBy: string;
+  createdByName: string;
+  createdAt: string;
+  updatedAt: string;
+  links: DayEventLink[];
+  attendees: DayEventAttendee[];
+  canManage: boolean;
+}
+
+/** The payload the editor PUTs; links and attendees replace what is stored. */
+export interface DayEventInput {
+  title: string;
+  color: EventColor;
+  description: string;
+  links: { url: string; label: string }[];
+  attendees: { userId: string | null; name: string }[];
+}

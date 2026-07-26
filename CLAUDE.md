@@ -63,8 +63,63 @@ them to a user who hasn't voted while the poll is open. Ending a poll (`closed_a
 admin only) reveals results to everyone and blocks further votes; options/title/mode stay editable
 via the poll routes. New poll columns are added by the idempotent `migrate()` in `db.ts`.
 
+Day events ("Events" tab): `day_events` (**one per date** — `date` is the primary key),
+`day_event_links`, `day_event_attendees`. **Admin-only** create/edit/delete (`requireAdmin`);
+every member can read. Attendee rows carry `user_id` **and** a denormalized `name` snapshot with
+**no foreign key**, so attendance survives a member being deleted (`repo.renameUser` keeps the
+snapshot in sync, like it does for `changes`/`day_comments`); `user_id` is null for a free-text
+guest. Colours are palette *tokens* (`sage`, `coral`, …), never hex — the browser maps them to
+`--ev-*` CSS variables per theme, and `normalizeColor` falls back rather than erroring. Links are
+run through `sanitizeUrl` (**http(s) only** — these render as `<a href>`, so `javascript:` must
+never reach the DB). `PUT /api/day-events/:date` replaces the whole event, links and attendees
+included, in one transaction.
+
+**Naming trap:** `server/src/events.ts` is the SSE pub/sub bus and `server/src/routes/events.ts`
+is the `GET /api/events` stream. Day events are `dayEvents` / `day_events` / `/api/day-events`
+everywhere, and their SSE channel is `"dayEvents"`.
+
+### Theming
+Every palette (`warm`, `paper`, `dark`, `midnight`, `ocean`, `forest`) is a
+`:root[data-theme="…"]` block in `web/src/app.css` redefining the **same** token set. Components
+must never hard-code a colour — reach for a token, or `color-mix()` from one. Add a palette by
+copying a block and registering it in `PALETTES` (`web/src/lib/stores.ts`); the stored choice may
+also be `"auto"`, which resolves against `prefers-color-scheme` at runtime and re-resolves when
+the OS flips. `app.css` also owns the z-index scale (`--z-sticky/-pop/-modal`) — keep every
+`z-index` on it.
+
+### Contrast rules (every palette is at WCAG AA, keep it that way)
+All 6 palettes were measured with a browser-driven audit (computed colours + composited ancestor
+backgrounds) across every view: **2178 text/background pairs, all ≥ 4.5:1**, tightest 4.80. The
+rules that keep it true:
+
+- **`--yes` / `--maybe` / `--no` are fills, never text.** White on them measures 1.9–4.1:1. Text
+  drawn *on* a solid vote fill uses `--on-yes` / `--on-maybe` / `--on-no` (deep tints of the fill,
+  one set per palette). Text drawn *next to* them uses `--yes-ink` / `--maybe-ink` / `--no-ink`.
+  `.btn.danger` keeps white by darkening its own background instead.
+- **`--muted` must clear 4.5:1 on the darkest surface it lands on** — `--empty` / `--chip`, not
+  just `--surface`. Every palette targets ~5.6:1 there for headroom.
+- **Accent-tinted text is mostly `--ink`**: `color-mix(in srgb, var(--ev) 45%, var(--ink))`, not
+  the reverse. Above ~50% accent it fails against its own tinted chip.
+- **Do not fade text with `opacity`.** It multiplies straight into the contrast ratio. Past day
+  cells are marked with a dashed border, not `opacity: .62`; the same applied to the 💬 button.
+  Deliberate de-emphasis states (`.dim`, disabled controls) are exempt.
+- `::placeholder` is pinned to `--muted` — the UA default is far too faint in the dark palettes.
+
+### Floating cards
+`HoverCard.svelte` + the `floating` action (`web/src/lib/popover.ts`) are the only way to show a
+popover/menu. The card is portaled to `<body>` and positioned `fixed`, because anything
+`position: absolute` inside `.calendar-scroll` gets clipped by its `overflow: auto` and pinned to
+one day-cell's width. It flips, clamps to the viewport, opens on tap where there is no hover, and
+its anchor wrapper is `display: contents` (so `floating` measures `firstElementChild`).
+
 ## Conventions
 - Conventional Commits; commit per major feature. Never commit `.env`, `legacy/`, or `INDEX.md`
   (the latter holds internal homelab IPs/container names).
 - The good date/vote-summary logic from the prototype lives in `web/src/lib/date.ts` and
   `web/src/lib/vote.ts` (ported from the old `app.js`).
+- Types are **duplicated by hand** across workspaces (`server/src/types.ts` ↔
+  `web/src/lib/types.ts`) — there is no shared package. A new API shape needs both, plus a method
+  in `web/src/lib/api.ts` and usually a store + SSE branch in `web/src/lib/stores.ts`.
+- User-facing strings go in **both** dicts in `web/src/lib/i18n.ts` (en + de).
+- `@fastify/static` is registered with `wildcard: false`, which globs `STATIC_DIR` **at startup** —
+  after rebuilding the SPA, restart the server or the newly-hashed assets 404.

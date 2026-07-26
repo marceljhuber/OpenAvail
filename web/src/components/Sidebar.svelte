@@ -75,13 +75,16 @@
     gap: 14px;
     align-content: start;
   }
+  /* auto-fit rather than a rigid 3 columns: the tiles reflow instead of
+     squashing their numbers when the sidebar drops under the calendar */
   .stats {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
     gap: 10px;
   }
   .stat {
     padding: 14px;
+    min-width: 0;
   }
   .stat span {
     display: block;
@@ -91,10 +94,15 @@
     text-transform: uppercase;
     letter-spacing: 0.06em;
   }
+  /* labels wrap onto a second line rather than being clipped to "VOTED …" */
+  .stat span {
+    overflow-wrap: anywhere;
+    hyphens: auto;
+  }
   .stat strong {
     display: block;
     margin-top: 6px;
-    font-size: 30px;
+    font-size: clamp(22px, 4vw, 30px);
     letter-spacing: -0.04em;
   }
   .stat.pos strong {
@@ -148,6 +156,8 @@
     justify-content: space-between;
     gap: 8px;
     font-size: 13px;
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
   .votes {
     display: flex;
@@ -179,5 +189,15 @@
   .arrow {
     color: var(--muted);
     font-weight: 900;
+  }
+
+  @media (max-width: 640px) {
+    .block {
+      padding: 14px;
+    }
+    .best-list,
+    .changes {
+      max-height: 260px;
+    }
   }
 </style>

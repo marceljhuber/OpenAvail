@@ -156,11 +156,14 @@
     display: grid;
     gap: 14px;
     align-content: start;
+    min-width: 0;
   }
   .head {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 10px;
+    min-width: 0;
   }
   .head h2 {
     font-size: 20px;
@@ -205,7 +208,6 @@
   input.ghost {
     color: var(--muted);
     font-style: italic;
-    opacity: 0.7;
   }
   .rm {
     width: 38px;
@@ -277,5 +279,25 @@
   .empty {
     color: var(--muted);
     font-size: 13px;
+  }
+
+  /* below the stacking breakpoint the rail is full-width, so let the poll cards
+     sit side by side instead of running one very long column */
+  @media (max-width: 1200px) and (min-width: 641px) {
+    .list {
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    }
+  }
+
+  @media (max-width: 640px) {
+    .votings {
+      padding: 14px;
+    }
+    .create {
+      padding: 12px;
+    }
+    .actions .btn {
+      flex: 1 1 auto;
+    }
   }
 </style>

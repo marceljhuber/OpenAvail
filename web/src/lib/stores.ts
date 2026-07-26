@@ -1,10 +1,18 @@
 import { get, writable } from "svelte/store";
 import { api } from "./api";
 import { addMonths, daysInMonth, startOfMonth, toISO } from "./date";
-import type { AppConfig, BoardState, PollMode, PollView, User, Vote } from "./types";
+import type {
+  AppConfig,
+  BoardState,
+  DayEventInput,
+  DayEventView,
+  PollMode,
+  PollView,
+  User,
+  Vote,
+} from "./types";
 
-export type ViewKind = "calendar" | "timeline";
-export type Theme = "light" | "dark";
+export type ViewKind = "calendar" | "timeline" | "events";
 export type SortKey = "date" | "yes" | "total" | "maybe" | "no" | "focus";
 
 export interface Filters {
@@ -34,36 +42,106 @@ export const session = writable<User | null>(null);
 export const board = writable<BoardState>(emptyBoard);
 export const polls = writable<PollView[]>([]);
 export const commentCounts = writable<Record<string, number>>({});
+/** day events keyed by ISO date (at most one per day) */
+export const dayEvents = writable<Record<string, DayEventView>>({});
 export const selectedDay = writable<string | null>(null);
 export const loading = writable<boolean>(true);
-export const theme = writable<Theme>("light");
+
+// ─── theming ─────────────────────────────────────────────────────────────────
+
+/** "auto" follows the OS; every other value is a concrete palette. */
+export type Theme = "auto" | PaletteName;
+export type PaletteName = "warm" | "paper" | "dark" | "midnight" | "ocean" | "forest";
+
+export interface Palette {
+  name: PaletteName;
+  /** which side of the light/dark divide it sits on (used to resolve "auto") */
+  dark: boolean;
+  /** swatch shown in the picker */
+  swatch: string;
+  /** <meta name="theme-color"> value */
+  themeColor: string;
+}
+
+export const PALETTES: Palette[] = [
+  { name: "warm", dark: false, swatch: "#f6f1e8", themeColor: "#f6f1e8" },
+  { name: "paper", dark: false, swatch: "#fbfbfa", themeColor: "#fbfbfa" },
+  { name: "dark", dark: true, swatch: "#141715", themeColor: "#141715" },
+  { name: "midnight", dark: true, swatch: "#0e1220", themeColor: "#0e1220" },
+  { name: "ocean", dark: true, swatch: "#0c1c24", themeColor: "#0c1c24" },
+  { name: "forest", dark: false, swatch: "#eef3ea", themeColor: "#eef3ea" },
+];
 
 const THEME_KEY = "openavail-theme";
+const DEFAULT_THEME: Theme = "auto";
 
-/** Apply the saved theme, or the OS preference on first visit. Call before mount. */
-export function initTheme(): void {
-  let t: Theme = "light"; // default is day/light unless the user chose dark
+export const theme = writable<Theme>(DEFAULT_THEME);
+/** the palette actually on screen right now ("auto" resolved) */
+export const activePalette = writable<PaletteName>("warm");
+
+function isPalette(value: unknown): value is PaletteName {
+  return PALETTES.some((p) => p.name === value);
+}
+
+function prefersDark(): boolean {
   try {
-    const saved = localStorage.getItem(THEME_KEY) as Theme | null;
-    if (saved === "dark" || saved === "light") t = saved;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  } catch {
+    return false;
+  }
+}
+
+/** Resolve the stored choice to a concrete palette and paint it onto <html>. */
+function paint(choice: Theme): void {
+  const name: PaletteName = choice === "auto" ? (prefersDark() ? "dark" : "warm") : choice;
+  document.documentElement.setAttribute("data-theme", name);
+  activePalette.set(name);
+
+  const color = PALETTES.find((p) => p.name === name)?.themeColor;
+  if (color) {
+    let meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+    if (!meta) {
+      meta = document.createElement("meta");
+      meta.name = "theme-color";
+      document.head.appendChild(meta);
+    }
+    meta.content = color;
+  }
+}
+
+/** Apply the saved theme and keep "auto" in step with the OS. Call before mount. */
+export function initTheme(): void {
+  let choice: Theme = DEFAULT_THEME;
+  try {
+    const saved = localStorage.getItem(THEME_KEY);
+    // pre-palette builds stored "light"/"dark"
+    if (saved === "light") choice = "warm";
+    else if (saved === "auto" || isPalette(saved)) choice = saved as Theme;
   } catch {
     /* storage unavailable */
   }
-  setTheme(t);
+  theme.set(choice);
+  paint(choice);
+
+  try {
+    window
+      .matchMedia("(prefers-color-scheme: dark)")
+      .addEventListener("change", () => {
+        if (get(theme) === "auto") paint("auto");
+      });
+  } catch {
+    /* matchMedia unavailable */
+  }
 }
 
 export function setTheme(t: Theme): void {
   theme.set(t);
-  document.documentElement.setAttribute("data-theme", t);
+  paint(t);
   try {
     localStorage.setItem(THEME_KEY, t);
   } catch {
     /* ignore */
   }
-}
-
-export function toggleTheme(): void {
-  setTheme(get(theme) === "dark" ? "light" : "dark");
 }
 
 export const filters = writable<Filters>({
@@ -86,7 +164,12 @@ export async function initApp(): Promise<void> {
     appConfig.set(cfg);
     session.set(user);
     if (user) {
-      await Promise.all([refreshBoard(), refreshPolls(), refreshCommentCounts()]);
+      await Promise.all([
+        refreshBoard(),
+        refreshPolls(),
+        refreshCommentCounts(),
+        refreshDayEvents(),
+      ]);
       startLive();
     }
   } finally {
@@ -108,6 +191,30 @@ export async function refreshPolls(): Promise<void> {
 
 export async function refreshCommentCounts(): Promise<void> {
   commentCounts.set(await api.commentCounts());
+}
+
+/** Load every day event at once — there are few of them, and one fetch serves
+ * both the calendar chips and the Events tab. */
+export async function refreshDayEvents(): Promise<void> {
+  const list = await api.listDayEvents();
+  const byDate: Record<string, DayEventView> = {};
+  for (const ev of list) byDate[ev.date] = ev;
+  dayEvents.set(byDate);
+}
+
+export async function saveDayEvent(date: string, input: DayEventInput): Promise<DayEventView> {
+  const saved = await api.saveDayEvent(date, input);
+  dayEvents.update((map) => ({ ...map, [date]: saved }));
+  return saved;
+}
+
+export async function removeDayEvent(date: string): Promise<void> {
+  await api.deleteDayEvent(date);
+  dayEvents.update((map) => {
+    const next = { ...map };
+    delete next[date];
+    return next;
+  });
 }
 
 export async function createPoll(
@@ -157,6 +264,7 @@ function refreshAll(): void {
   refreshBoard().catch(() => {});
   refreshPolls().catch(() => {});
   refreshCommentCounts().catch(() => {});
+  refreshDayEvents().catch(() => {});
 }
 
 /** Live updates via Server-Sent Events, with a slow safety poll as fallback
@@ -171,6 +279,7 @@ export function startLive(): void {
         if (channel === "board") refreshBoard().catch(() => {});
         else if (channel === "polls") refreshPolls().catch(() => {});
         else if (channel === "comments") refreshCommentCounts().catch(() => {});
+        else if (channel === "dayEvents") refreshDayEvents().catch(() => {});
       } catch {
         /* ignore malformed frames */
       }
@@ -201,7 +310,7 @@ export async function loginDev(name: string, email?: string): Promise<User> {
 
 async function afterLogin(user: User): Promise<User> {
   session.set(user);
-  await Promise.all([refreshBoard(), refreshPolls()]);
+  await Promise.all([refreshBoard(), refreshPolls(), refreshCommentCounts(), refreshDayEvents()]);
   startLive();
   return user;
 }
@@ -213,6 +322,7 @@ export async function logout(): Promise<void> {
   board.set(emptyBoard);
   polls.set([]);
   commentCounts.set({});
+  dayEvents.set({});
   selectedDay.set(null);
 }
 

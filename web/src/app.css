@@ -1,8 +1,33 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   Design tokens.
+
+   Every palette redefines the SAME token set, so components never reference a
+   raw colour — add a palette by copying a block below and registering it in
+   PALETTES (web/src/lib/stores.ts). The "auto" choice resolves to `warm` or
+   `dark` from prefers-color-scheme at runtime.
+   ──────────────────────────────────────────────────────────────────────────── */
+
 :root {
+  /* shared, palette-independent */
+  --radius: 20px;
+  --radius-sm: 13px;
+  --tap: 44px; /* minimum comfortable touch target */
+
+  /* stacking order — keep every z-index in the app on this scale */
+  --z-sticky: 5;
+  --z-pop: 40;
+  --z-modal: 60;
+}
+
+/* ── warm (default light) ─────────────────────────────────────────────────── */
+:root,
+:root[data-theme="warm"] {
   color-scheme: light;
   --bg: #f6f1e8;
   --ink: #1f2624;
-  --muted: #6c746f;
+  /* --muted must clear 4.5:1 on the DARKEST surface it lands on (--empty/--chip),
+     not just on --surface — see the contrast notes in CLAUDE.md */
+  --muted: #555b57;
   --panel: rgba(255, 252, 244, 0.88);
   --line: rgba(31, 38, 36, 0.13);
   --surface: #ffffff;
@@ -18,19 +43,102 @@
   --yes-ink: #087744;
   --maybe: #e7b72f;
   --maybe-soft: #fff2c5;
-  --maybe-ink: #916b00;
+  --maybe-ink: #886500;
   --no: #e55d4f;
   --no-soft: #ffe2df;
   --no-ink: #a92d23;
+  /* text drawn ON the solid vote fills. White fails on all three in every
+     palette (1.9–4.1), so these are deep tints of the fill itself. */
+  --on-yes: #0a3721;
+  --on-maybe: #584612;
+  --on-no: #321411;
   --shadow: 0 24px 70px rgba(54, 44, 27, 0.16);
-  --radius: 20px;
+  --glow-1: rgba(32, 178, 107, 0.16);
+  --glow-2: rgba(231, 183, 47, 0.2);
+  --backdrop: rgba(20, 16, 8, 0.42);
+  --focus: #1f7f52;
+  /* how strongly the per-month hue tints a month card */
+  --month-mix: 7%;
 }
 
+/* ── paper (neutral light) ────────────────────────────────────────────────── */
+:root[data-theme="paper"] {
+  color-scheme: light;
+  --bg: #f4f5f7;
+  --ink: #171a1f;
+  --muted: #565c68;
+  --panel: rgba(255, 255, 255, 0.9);
+  --line: rgba(15, 23, 42, 0.12);
+  --surface: #ffffff;
+  --surface-2: #f7f8fa;
+  --surface-a: rgba(255, 255, 255, 0.75);
+  --chip: #eceef2;
+  --header: #fbfcfd;
+  --empty: #e9ebef;
+  --btn: #1e2430;
+  --btn-fg: #ffffff;
+  --yes: #16a34a;
+  --yes-soft: #dcfce7;
+  --yes-ink: #14713a;
+  --maybe: #d99e0b;
+  --maybe-soft: #fef3c7;
+  --maybe-ink: #8a6206;
+  --no: #dc4d3f;
+  --no-soft: #fee2e2;
+  --no-ink: #a52d22;
+  --on-yes: #052712;
+  --on-maybe: #4a3604;
+  --on-no: #160806;
+  --shadow: 0 24px 70px rgba(15, 23, 42, 0.14);
+  --glow-1: rgba(59, 130, 246, 0.1);
+  --glow-2: rgba(148, 163, 184, 0.14);
+  --backdrop: rgba(15, 23, 42, 0.42);
+  --focus: #2563eb;
+  --month-mix: 6%;
+}
+
+/* ── forest (green light) ─────────────────────────────────────────────────── */
+:root[data-theme="forest"] {
+  color-scheme: light;
+  --bg: #eef3ea;
+  --ink: #16241b;
+  --muted: #4e5d54;
+  --panel: rgba(250, 253, 248, 0.9);
+  --line: rgba(22, 36, 27, 0.13);
+  --surface: #fbfdfa;
+  --surface-2: #f0f5ec;
+  --surface-a: rgba(251, 253, 250, 0.72);
+  --chip: #e3ecdd;
+  --header: #f5faf1;
+  --empty: #e2e9dd;
+  --btn: #1c2f22;
+  --btn-fg: #f4fbf5;
+  --yes: #1f9d63;
+  --yes-soft: #d8f3e4;
+  --yes-ink: #0c6b40;
+  --maybe: #cf9c1f;
+  --maybe-soft: #f9eec6;
+  --maybe-ink: #7d5c05;
+  --no: #d9564a;
+  --no-soft: #fadedb;
+  --no-ink: #9c2c22;
+  --on-yes: #072316;
+  --on-maybe: #44330a;
+  --on-no: #1e0c0a;
+  --shadow: 0 24px 70px rgba(24, 46, 31, 0.16);
+  --glow-1: rgba(32, 178, 107, 0.2);
+  --glow-2: rgba(150, 200, 90, 0.16);
+  --backdrop: rgba(14, 28, 19, 0.45);
+  --focus: #1f7f52;
+  --month-mix: 7%;
+}
+
+/* ── dark ─────────────────────────────────────────────────────────────────── */
 :root[data-theme="dark"] {
   color-scheme: dark;
   --bg: #141715;
   --ink: #e9ece8;
-  --muted: #98a29a;
+  --muted: #a3aca5;
   --panel: rgba(28, 32, 30, 0.86);
   --line: rgba(255, 255, 255, 0.12);
   --surface: #1e2320;
@@ -50,11 +158,123 @@
   --no: #e9695c;
   --no-soft: rgba(233, 105, 92, 0.2);
   --no-ink: #ff9086;
+  --on-yes: #0f4028;
+  --on-maybe: #584612;
+  --on-no: #3d1b18;
   --shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
+  --glow-1: rgba(32, 178, 107, 0.1);
+  --glow-2: rgba(231, 183, 47, 0.08);
+  --backdrop: rgba(0, 0, 0, 0.6);
+  --focus: #5fd6a1;
+  --month-mix: 10%;
 }
+
+/* ── midnight (indigo dark) ───────────────────────────────────────────────── */
+:root[data-theme="midnight"] {
+  color-scheme: dark;
+  --bg: #0e1220;
+  --ink: #e6e8f2;
+  --muted: #9fa6bd;
+  --panel: rgba(22, 27, 45, 0.86);
+  --line: rgba(255, 255, 255, 0.12);
+  --surface: #171d31;
+  --surface-2: #1d2440;
+  --surface-a: rgba(255, 255, 255, 0.05);
+  --chip: #242c4a;
+  --header: #141a2c;
+  --empty: #242c4a;
+  --btn: #e6e8f2;
+  --btn-fg: #131728;
+  --yes: #3ecf8e;
+  --yes-soft: rgba(62, 207, 142, 0.18);
+  --yes-ink: #6fe0ab;
+  --maybe: #e5b94a;
+  --maybe-soft: rgba(229, 185, 74, 0.18);
+  --maybe-ink: #efc966;
+  --no: #f0726b;
+  --no-soft: rgba(240, 114, 107, 0.18);
+  --no-ink: #ff958f;
+  --on-yes: #174d35;
+  --on-maybe: #57461c;
+  --on-no: #46211f;
+  --shadow: 0 24px 70px rgba(0, 0, 0, 0.6);
+  --glow-1: rgba(99, 102, 241, 0.18);
+  --glow-2: rgba(56, 189, 248, 0.12);
+  --backdrop: rgba(4, 7, 16, 0.66);
+  --focus: #8ea2ff;
+  --month-mix: 10%;
+}
+
+/* ── ocean (teal dark) ────────────────────────────────────────────────────── */
+:root[data-theme="ocean"] {
+  color-scheme: dark;
+  --bg: #0c1c24;
+  --ink: #e2eff2;
+  --muted: #9eb5bb;
+  --panel: rgba(17, 38, 47, 0.86);
+  --line: rgba(255, 255, 255, 0.12);
+  --surface: #12262f;
+  --surface-2: #163038;
+  --surface-a: rgba(255, 255, 255, 0.05);
+  --chip: #1c3a44;
+  --header: #102730;
+  --empty: #1c3a44;
+  --btn: #e2eff2;
+  --btn-fg: #0e2028;
+  --yes: #2fc7a0;
+  --yes-soft: rgba(47, 199, 160, 0.18);
+  --yes-ink: #63dcbc;
+  --maybe: #e3b656;
+  --maybe-soft: rgba(227, 182, 86, 0.18);
+  --maybe-ink: #eec872;
+  --no: #ef7264;
+  --no-soft: rgba(239, 114, 100, 0.18);
+  --no-ink: #ff958a;
+  --on-yes: #11483a;
+  --on-maybe: #564521;
+  --on-no: #45211d;
+  --shadow: 0 24px 70px rgba(0, 0, 0, 0.6);
+  --glow-1: rgba(20, 184, 166, 0.18);
+  --glow-2: rgba(14, 165, 233, 0.12);
+  --backdrop: rgba(3, 14, 19, 0.66);
+  --focus: #63dcbc;
+  --month-mix: 10%;
+}
+
+/* ── day-event palette ────────────────────────────────────────────────────────
+   One hue per token; components derive fills and text from it with color-mix,
+   so only the base needs a light and a dark variant. */
+:root {
+  --ev-sage: #4f9d6f;
+  --ev-amber: #d99320;
+  --ev-coral: #e2604f;
+  --ev-plum: #9459b8;
+  --ev-ocean: #2f8fbf;
+  --ev-forest: #2f7a4a;
+  --ev-rose: #d8508a;
+  --ev-slate: #62748d;
+}
+:root[data-theme="dark"],
+:root[data-theme="midnight"],
+:root[data-theme="ocean"] {
+  --ev-sage: #5cc78c;
+  --ev-amber: #edb44a;
+  --ev-coral: #f2806f;
+  --ev-plum: #b782dd;
+  --ev-ocean: #58b6e2;
+  --ev-forest: #55b077;
+  --ev-rose: #ef7aab;
+  --ev-slate: #94a7bf;
+}
+
+/* ─── base ─────────────────────────────────────────────────────────────────── */
 
 * {
   box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
 }
 
 [hidden] {
@@ -64,18 +284,24 @@
 body {
   margin: 0;
   min-height: 100vh;
+  min-height: 100svh;
+  /* stop a stray wide child from side-scrolling the whole page */
+  overflow-x: hidden;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
   color: var(--ink);
+  -webkit-tap-highlight-color: transparent;
   background:
-    radial-gradient(circle at top left, rgba(32, 178, 107, 0.16), transparent 30rem),
-    radial-gradient(circle at top right, rgba(231, 183, 47, 0.2), transparent 28rem),
+    radial-gradient(circle at top left, var(--glow-1), transparent 30rem),
+    radial-gradient(circle at top right, var(--glow-2), transparent 28rem),
     var(--bg);
+  background-attachment: fixed;
 }
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
@@ -88,15 +314,25 @@ h2,
 h3 {
   margin: 0;
   letter-spacing: -0.04em;
+  overflow-wrap: anywhere;
 }
 
 a {
   color: var(--yes-ink);
 }
 
+/* one visible focus treatment for the whole app (there was none) */
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
 .eyebrow {
   margin: 0 0 10px;
-  color: var(--yes);
+  /* --yes is a fill, not a text colour: it only reaches 2.4:1 on the light
+     panels. --yes-ink is the readable counterpart. */
+  color: var(--yes-ink);
   font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
@@ -104,23 +340,43 @@ a {
 }
 
 input,
-select {
+select,
+textarea {
   min-height: 42px;
+  max-width: 100%;
   border: 1px solid var(--line);
-  border-radius: 13px;
+  border-radius: var(--radius-sm);
   padding: 0 13px;
   background: var(--surface);
   color: var(--ink);
 }
 
+textarea {
+  padding: 10px 13px;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+/* the UA default placeholder is far too faint in the dark palettes — pin it to
+   a token that is known to clear 4.5:1 on --surface */
+::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
 .btn {
   min-height: 42px;
   border: 0;
-  border-radius: 13px;
+  border-radius: var(--radius-sm);
   padding: 0 16px;
   color: var(--btn-fg);
   background: var(--btn);
   font-weight: 800;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .btn.secondary {
@@ -129,9 +385,11 @@ select {
   border: 1px solid var(--line);
 }
 
+/* white on a raw --no is only 2.9–4.1:1; darkening the fill keeps the red
+   read as "danger" while the label clears 4.5 in every palette */
 .btn.danger {
   color: #fff;
-  background: var(--no);
+  background: color-mix(in srgb, var(--no) 75%, #000);
 }
 
 .panel {
@@ -163,4 +421,71 @@ select {
 .pill.no {
   color: var(--no-ink);
   background: var(--no-soft);
+}
+
+/* Dropdown menus. Global because HoverCard portals its card to <body>, outside
+   any component's scoped-style subtree. */
+.hc-card.pick-menu {
+  min-width: 176px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.hc-card.pick-menu .pick-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 14px;
+  text-align: left;
+}
+.hc-card.pick-menu .pick-item:hover,
+.hc-card.pick-menu .pick-item.on {
+  background: var(--chip);
+}
+.hc-card.pick-menu .short {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 20px;
+  border-radius: 6px;
+  background: var(--chip);
+  font-size: 11px;
+  font-weight: 900;
+}
+.hc-card.pick-menu .swatch {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+}
+/* "auto" has no palette of its own — show it split light/dark */
+.hc-card.pick-menu .swatch.auto {
+  background: linear-gradient(135deg, #f6f1e8 0 50%, #141715 50% 100%) !important;
+}
+
+@media (max-width: 640px) {
+  /* iOS zooms the page when a focused input is under 16px */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

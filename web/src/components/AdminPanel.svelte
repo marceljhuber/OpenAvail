@@ -205,17 +205,19 @@
   .backdrop {
     position: fixed;
     inset: 0;
-    z-index: 50;
+    z-index: var(--z-modal);
     display: grid;
     place-items: center;
     padding: 18px;
-    background: rgba(20, 16, 8, 0.42);
+    background: var(--backdrop);
     backdrop-filter: blur(3px);
   }
   .modal {
     width: min(720px, 100%);
     max-height: 88vh;
+    max-height: 88svh;
     overflow: auto;
+    overscroll-behavior: contain;
     padding: 22px;
     display: grid;
     gap: 22px;
@@ -262,6 +264,7 @@
     border-radius: 14px;
     background: var(--surface);
     font-size: 13px;
+    min-width: 0;
   }
   .url {
     flex: 1;
@@ -278,6 +281,7 @@
   .actions {
     display: flex;
     gap: 10px;
+    flex: 0 0 auto;
   }
   .badge {
     flex: 0 0 auto;
@@ -354,9 +358,16 @@
     font-weight: 700;
   }
 
-  @media (max-width: 620px) {
+  @media (max-width: 640px) {
+    .backdrop {
+      padding: 0;
+      place-items: end center;
+    }
     .modal {
-      padding: 16px;
+      width: 100%;
+      max-height: 92svh;
+      border-radius: 22px 22px 0 0;
+      padding: 16px 14px calc(16px + env(safe-area-inset-bottom));
     }
     .sec-head {
       flex-direction: column;
@@ -371,6 +382,9 @@
     }
     .exp {
       font-size: 12px;
+    }
+    .editform {
+      flex-wrap: wrap;
     }
   }
 </style>

@@ -12,6 +12,7 @@ import { registerAdminRoutes } from "./routes/admin.js";
 import { registerPollRoutes } from "./routes/polls.js";
 import { registerEventRoutes } from "./routes/events.js";
 import { registerCommentRoutes } from "./routes/comments.js";
+import { registerDayEventRoutes } from "./routes/dayEvents.js";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -47,6 +48,7 @@ export function buildApp(db: DB): FastifyInstance {
   registerPollRoutes(app);
   registerEventRoutes(app);
   registerCommentRoutes(app);
+  registerDayEventRoutes(app);
 
   // Optionally serve the built SPA (single-container deploy). API routes are
   // registered first; everything else falls back to index.html for client-side

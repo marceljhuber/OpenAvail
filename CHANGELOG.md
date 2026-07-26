@@ -3,6 +3,103 @@
 A running diary of notable changes. Newest first. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); dates are Europe/Vienna.
 
+## 2026-07-26
+
+### Day events — a memory of what actually happened
+- **Any date can now hold an event** (past dates included): a title, a colour, a
+  description, links, and who was there. One event per day; **admins** create and
+  edit them, everyone can see them.
+- **Attendees are seeded from the day's yes-votes** ("From yes-votes") and then
+  freely editable — tick members on/off, and type in **guests** who aren't board
+  members at all. Names are stored as snapshots, so attendance survives a member
+  being renamed or removed.
+- **Links** are validated server-side: only `http(s)` survives (a bare
+  `instagram.com/p/…` is upgraded to https, `javascript:` is dropped), and each
+  chip picks up an icon from the host (YouTube, Instagram, TikTok, Spotify, maps).
+- **New "Events" tab**: every event newest-first, grouped under **sticky year
+  dividers**, each card in its own colour, with a search box over titles,
+  descriptions and attendee names.
+- The **calendar** shows a coloured chip on days that have an event and tints the
+  cell's border to match; the **date number is now a button** that opens the day.
+
+### Themes
+- The light/dark toggle became a **palette picker**: **Auto** (follows the OS,
+  live) plus **Warm, Paper, Dark, Midnight, Ocean, Forest**. Every palette
+  redefines the same token set, so components never hard-code a colour.
+- Colours that were previously hard-coded — the body gradient, the "top day"
+  ring, modal backdrops, the timeline's month tints and its amber vote text —
+  are now tokens, so they follow the palette instead of breaking outside light
+  mode.
+
+### Contrast — every palette now passes WCAG AA
+Audited with a browser-driven pass that reads the *computed* colour of every
+text element and composites its real ancestor backgrounds (so `color-mix`,
+translucent panels and stacked opacity are all accounted for), across 6 themes ×
+8 views. **2178 pairs measured; all now ≥ 4.5:1**, tightest 4.80. Before the
+pass, warm/paper/forest had 21/13/18 failures and the dark palettes 1 each.
+
+- **White text on the vote colours failed in every single theme** (1.85–4.06:1) —
+  worst in Midnight. Timeline cells, active vote buttons, focus chips and poll
+  checkmarks now use new `--on-yes` / `--on-maybe` / `--on-no` tokens (deep tints
+  of the fill). `.btn.danger` keeps white text by darkening its own background.
+- **`--muted` was too light in all three light palettes** (3.9–4.4:1 on `--chip`
+  / `--empty`, which is where it actually lands). Re-solved for ~5.6:1 in every
+  palette, light and dark — this alone fixed a dozen labels, hints and the ✕
+  buttons. Midnight/Dark/Ocean got the same headroom treatment.
+- `.eyebrow` used `--yes` as a *text* colour (2.4:1 on the light panels) — now
+  `--yes-ink`.
+- **Stopped fading text with `opacity`**, which multiplies directly into the
+  contrast ratio: past day cells are marked with a **dashed border** instead of
+  `opacity: .62` (they hold events now, so they must stay readable), and the 💬
+  button lost its 0.6 fade.
+- Accent-tinted text (event chips, month labels, attendee ticks) was mostly
+  accent with a little ink; flipped to mostly ink with a hint of accent.
+- `::placeholder` is pinned to `--muted` — the browser default was very faint on
+  the dark palettes.
+
+### The hover cards that clashed and cut names off
+- Voter-name popovers (calendar **and** votings) were `position: absolute` inside
+  the calendar's scroll container, so they were **clipped** at its edges, pinned
+  to a single day-cell's width with `white-space: nowrap` (hence truncated
+  names), and opened downward **over the vote buttons**.
+- Replaced with one shared `HoverCard`: the card is portaled to `<body>`,
+  positioned `fixed` from the trigger, **flips above** when there's no room
+  below, **clamps** into the viewport horizontally, and sizes itself to its
+  content. Also **tappable on touch** (there is no hover on a phone) and
+  dismissed by Escape / outside click / scrolling away.
+
+### Branding
+- A hand-drawn **SVG logo** (calendar page + tick) in the top bar and on the
+  landing page, plus `favicon.svg` (light/dark aware), a Safari `mask-icon`, and
+  a web manifest. *iOS home-screen icons still want a raster
+  `apple-touch-icon.png`; SVG-only means iOS falls back to a screenshot.*
+- The language button shows a **text badge (EN / DE)**. The flag emoji rendered
+  as the bare letters "GB" on Windows, which has no regional-indicator glyphs.
+  `<html lang>` now tracks the chosen locale.
+
+### Calendar
+- **Infinite scrolling backwards too.** History stopped at 3 months, so older
+  days were unreachable — which made "add an event to a past day" impossible past
+  the first quarter. Scroll position is preserved when older months are
+  prepended, and a **Today** button jumps back.
+- **Each month gets a faint hue of its own** so the blocks are distinguishable
+  while scrolling; the timeline's month bands now use the same scale (and finally
+  work in dark palettes).
+
+### UI polish and mobile
+- Standardised breakpoints (1200 / 900 / 640 / 480). Added the media queries that
+  `VotingsPanel`, `PollCard`, `DayModal` and `Sidebar` never had.
+- Modals become **bottom sheets** under 640px; the calendar goes 2 columns under
+  900px and 1 under 480px with day cells that shrink to their content.
+- Fixed text that clipped: the sidebar's stat labels ("VOTED …") now wrap, the
+  day header no longer squeezes the yes-score, and long names truncate with a
+  `title` instead of overflowing.
+- Added a global `:focus-visible` ring (there was none), a
+  `prefers-reduced-motion` block, ≥44px tap targets, 16px inputs on phones (iOS
+  zoom), and `overflow-x: hidden` on the body.
+- The **day dialog is now translated** (it was hard-coded English), and the
+  range/sort controls are hidden on the Events tab where they mean nothing.
+
 ## 2026-07-06 (later)
 
 - **Language menu lingers** ~1.6s after the pointer leaves (and toggles on

@@ -32,7 +32,7 @@
   .vb {
     flex: 1 1 44px;
     min-width: 0;
-    min-height: 30px;
+    min-height: 32px;
     padding: 0 6px;
     border: 0;
     border-radius: 10px;
@@ -41,17 +41,32 @@
     font-size: 12px;
     font-weight: 800;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
+  .vb:hover {
+    color: var(--ink);
+  }
+  /* white on these fills measures 1.9–4.1:1 in every palette, so the label is a
+     deep tint of the fill instead (see --on-* in app.css) */
   .vb.active.yes {
-    color: white;
+    color: var(--on-yes);
     background: var(--yes);
   }
   .vb.active.maybe {
-    color: #372800;
+    color: var(--on-maybe);
     background: var(--maybe);
   }
   .vb.active.no {
-    color: white;
+    color: var(--on-no);
     background: var(--no);
+  }
+
+  /* comfortable thumb targets once the calendar goes 1–2 columns */
+  @media (max-width: 900px) {
+    .vb {
+      min-height: var(--tap);
+      font-size: 13px;
+    }
   }
 </style>

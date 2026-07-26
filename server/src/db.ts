@@ -89,6 +89,42 @@ CREATE TABLE IF NOT EXISTS day_comments (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_day_comments_date ON day_comments(date, created_at);
+
+-- Day events: "what actually happened" on a date. One event per day, admin-managed.
+-- (Not to be confused with src/events.ts, which is the SSE pub/sub bus.)
+CREATE TABLE IF NOT EXISTS day_events (
+  date        TEXT PRIMARY KEY,
+  title       TEXT NOT NULL,
+  color       TEXT NOT NULL DEFAULT 'sage',
+  description TEXT NOT NULL DEFAULT '',
+  created_by  TEXT NOT NULL,
+  created_at  TEXT NOT NULL,
+  updated_at  TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_day_events_date ON day_events(date DESC);
+
+CREATE TABLE IF NOT EXISTS day_event_links (
+  id       TEXT PRIMARY KEY,
+  date     TEXT NOT NULL,
+  url      TEXT NOT NULL,
+  label    TEXT NOT NULL DEFAULT '',
+  position INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY (date) REFERENCES day_events(date) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_day_event_links_date ON day_event_links(date, position);
+
+CREATE TABLE IF NOT EXISTS day_event_attendees (
+  id       TEXT PRIMARY KEY,
+  date     TEXT NOT NULL,
+  -- member id, or NULL for a free-text guest. Deliberately NO foreign key:
+  -- attendance is history and must survive the member being removed, so the
+  -- name below is a snapshot (same convention as changes.user_name).
+  user_id  TEXT,
+  name     TEXT NOT NULL,
+  position INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY (date) REFERENCES day_events(date) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_day_event_attendees_date ON day_event_attendees(date, position);
 `;
 
 export type DB = DatabaseSync;

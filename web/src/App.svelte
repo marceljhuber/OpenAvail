@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { initApp, loading, session } from "./lib/stores";
   import Landing from "./components/Landing.svelte";
+  import Logo from "./components/Logo.svelte";
   import Workspace from "./components/Workspace.svelte";
 
   onMount(() => {
@@ -11,7 +12,7 @@
 
 {#if $loading}
   <div class="boot">
-    <span class="mark">OA</span>
+    <Logo size={44} />
     <p>Loading…</p>
   </div>
 {:else if $session}
@@ -26,16 +27,7 @@
     place-items: center;
     gap: 12px;
     min-height: 100vh;
+    min-height: 100svh;
     color: var(--muted);
-  }
-  .mark {
-    display: grid;
-    place-items: center;
-    width: 44px;
-    height: 44px;
-    border-radius: 14px;
-    color: white;
-    background: #17201d;
-    font-weight: 800;
   }
 </style>

@@ -1,4 +1,15 @@
-import type { AppConfig, BoardState, Comment, Invite, PollMode, PollView, User, Vote } from "./types";
+import type {
+  AppConfig,
+  BoardState,
+  Comment,
+  DayEventInput,
+  DayEventView,
+  Invite,
+  PollMode,
+  PollView,
+  User,
+  Vote,
+} from "./types";
 
 export class ApiError extends Error {
   constructor(
@@ -126,4 +137,17 @@ export const api = {
     request<Comment>("/api/comments", { method: "POST", body: JSON.stringify({ date, body }) }),
   deleteComment: (id: string) =>
     request<{ ok: true }>(`/api/comments/${encodeURIComponent(id)}`, { method: "DELETE" }),
+
+  // day events (admin-managed; one per date)
+  listDayEvents: () =>
+    request<{ events: DayEventView[] }>("/api/day-events").then((r) => r.events),
+  getDayEvent: (date: string) =>
+    request<DayEventView>(`/api/day-events/${encodeURIComponent(date)}`),
+  saveDayEvent: (date: string, input: DayEventInput) =>
+    request<DayEventView>(`/api/day-events/${encodeURIComponent(date)}`, {
+      method: "PUT",
+      body: JSON.stringify(input),
+    }),
+  deleteDayEvent: (date: string) =>
+    request<{ ok: true }>(`/api/day-events/${encodeURIComponent(date)}`, { method: "DELETE" }),
 };

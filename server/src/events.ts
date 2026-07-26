@@ -1,7 +1,7 @@
 // Tiny in-process pub/sub used to push Server-Sent Events to connected clients.
 // A published channel name tells clients which store to refetch.
 
-export type Channel = "board" | "polls" | "comments";
+export type Channel = "board" | "polls" | "comments" | "dayEvents";
 type Listener = (channel: Channel) => void;
 
 const listeners = new Set<Listener>();

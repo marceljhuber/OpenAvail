@@ -1,6 +1,8 @@
 <script lang="ts">
-  import { appConfig, login, loginDev, theme, toggleTheme } from "../lib/stores";
+  import { appConfig, login, loginDev } from "../lib/stores";
   import { renderGoogleButton } from "../lib/google";
+  import ThemePicker from "./ThemePicker.svelte";
+  import Logo from "./Logo.svelte";
 
   let buttonEl = $state<HTMLDivElement>();
   let error = $state<string | null>(null);
@@ -47,18 +49,13 @@
   });
 </script>
 
-<button
-  class="btn secondary theme-toggle"
-  onclick={toggleTheme}
-  title="Toggle dark mode"
-  aria-label="Toggle dark mode"
->
-  {$theme === "dark" ? "☀️" : "🌙"}
-</button>
+<div class="theme-pick">
+  <ThemePicker buttonClass="btn secondary theme-toggle" />
+</div>
 
 <main class="landing">
   <div class="card panel">
-    <div class="brand"><span class="mark">OA</span></div>
+    <div class="brand"><Logo size={52} /></div>
     <p class="eyebrow">Group availability</p>
     <h1>{$appConfig?.ownerName ?? ""}'s OpenAvail</h1>
     <p class="lede">
@@ -99,15 +96,21 @@
     display: grid;
     place-items: center;
     min-height: 100vh;
+    min-height: 100svh;
     padding: 24px;
   }
-  .theme-toggle {
+  .theme-pick {
     position: fixed;
     top: 16px;
     right: 16px;
-    z-index: 10;
+    z-index: var(--z-sticky);
+  }
+  /* the button lives inside ThemePicker, so the rule has to escape this scope */
+  .theme-pick :global(.theme-toggle) {
+    min-width: var(--tap);
     padding: 0 10px;
     font-size: 15px;
+    line-height: 1;
   }
   .card {
     width: min(440px, 100%);
@@ -118,16 +121,6 @@
     display: flex;
     justify-content: center;
     margin-bottom: 18px;
-  }
-  .mark {
-    display: grid;
-    place-items: center;
-    width: 52px;
-    height: 52px;
-    border-radius: 16px;
-    color: var(--btn-fg);
-    background: var(--btn);
-    font-weight: 800;
   }
   .eyebrow {
     justify-self: center;
@@ -184,5 +177,15 @@
   }
   .dev-row input {
     flex: 1;
+    min-width: 0;
+  }
+
+  @media (max-width: 640px) {
+    .landing {
+      padding: 16px;
+    }
+    .card {
+      padding: 26px 20px;
+    }
   }
 </style>
