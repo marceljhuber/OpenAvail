@@ -36,9 +36,16 @@ export interface RankedDay {
   summary: DaySummary;
 }
 
-/** Days that have at least one vote, ranked: most yes, then most responses. */
-export function getBestDays(days: Date[], votes: VotesByDate): RankedDay[] {
+/**
+ * Days that have at least one vote, ranked: most yes, then most responses.
+ *
+ * `notBefore` drops earlier days — this list is a "when should we meet"
+ * suggestion, so a day that has already passed is never an answer, even though
+ * it still sits inside the selected range.
+ */
+export function getBestDays(days: Date[], votes: VotesByDate, notBefore?: Date): RankedDay[] {
   return days
+    .filter((date) => !notBefore || date >= notBefore)
     .map((date) => ({ date, iso: toISO(date), summary: summarizeDay(votes, toISO(date)) }))
     .filter((d) => d.summary.total > 0)
     .sort(

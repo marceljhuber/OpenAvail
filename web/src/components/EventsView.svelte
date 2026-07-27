@@ -14,9 +14,16 @@
   // scrolling a year of months — so admins get a date box straight to the day.
   let newDate = $state(toISO(new Date()));
 
-  const all = $derived(
-    Object.values($dayEvents).sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0)),
-  );
+  // ISO dates are zero-padded (the server enforces YYYY-MM-DD), so a plain
+  // string compare is a correct date compare.
+  let oldestFirst = $state(false);
+
+  const all = $derived.by(() => {
+    const dir = oldestFirst ? -1 : 1;
+    return Object.values($dayEvents).sort(
+      (a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0) * dir,
+    );
+  });
 
   const matches = $derived.by(() => {
     const q = query.trim().toLowerCase();
@@ -68,6 +75,15 @@
         </div>
       {/if}
       {#if all.length > 0}
+        <button
+          class="order"
+          onclick={() => (oldestFirst = !oldestFirst)}
+          title={$t("events.orderHint")}
+          aria-pressed={oldestFirst}
+        >
+          {oldestFirst ? "↑" : "↓"}
+          {oldestFirst ? $t("events.oldestFirst") : $t("events.newestFirst")}
+        </button>
         <input
           class="search"
           type="search"
@@ -142,6 +158,21 @@
   }
   .new input {
     min-width: 0;
+  }
+  .order {
+    flex: 0 0 auto;
+    min-height: 34px;
+    padding: 0 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 12.5px;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+  .order:hover {
+    background: var(--chip);
   }
   .search {
     flex: 0 1 280px;

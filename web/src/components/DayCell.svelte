@@ -155,9 +155,22 @@
   .day-cell.top-day {
     outline: 3px solid color-mix(in srgb, var(--yes) 30%, transparent);
   }
-  /* a recorded event tints the whole cell border in its colour */
+  /* A recorded event colours the whole day, not just its chip: a tinted border,
+     a solid bar along the top edge, and a wash that fades out downward so the
+     vote buttons keep a neutral base to sit on.
+     The wash is a background-IMAGE layered over .day-cell's background-color,
+     so the yes-tint underneath still reads through it — and so the heatmap's
+     `background` shorthand below cleanly replaces it (in heatmap mode the fill
+     is the point; the top bar still marks the day). --month-mix is the
+     palette's "how strong may a decorative tint be" knob, ~7% light / 10% dark. */
   .day-cell.has-event {
-    border-color: color-mix(in srgb, var(--ev) 45%, var(--line));
+    border-color: color-mix(in srgb, var(--ev) 62%, var(--line));
+    background-image: linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--ev) calc(var(--month-mix) * 2.6), transparent),
+      transparent 74%
+    );
+    box-shadow: inset 0 3px 0 var(--ev);
   }
   /* heatmap fill overrides the subtle yes-tint; mixed with the surface so the
      day's chips/text stay legible in both themes */

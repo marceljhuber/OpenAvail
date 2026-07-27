@@ -113,6 +113,10 @@ browser). Its exit code is the failure count. The rules that keep it true:
   layer over `--surface` instead.
 - **Text on a *tinted container* must be solved against the tint, not `--surface`** — day-cell
   labels sit on the yes-shading and the heatmap fill, so they use `--ink`, not `--muted`.
+- The audit composites `background-color` only, **not `background-image`**. Decorative gradient
+  washes (the event-day tint on `.day-cell.has-event`) are therefore invisible to it — keep them
+  weak (≤ ~26% accent, i.e. `calc(var(--month-mix) * 2.6)`) and never put one under small text
+  that lacks its own opaque chip.
 
 ### Floating cards
 `HoverCard.svelte` + the `floating` action (`web/src/lib/popover.ts`) are the only way to show a

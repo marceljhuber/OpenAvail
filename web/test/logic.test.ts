@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { enumerateDays, mondayBasedDay, toISO } from "../src/lib/date";
-import { summarizeDay } from "../src/lib/vote";
+import { getBestDays, summarizeDay } from "../src/lib/vote";
 import {
   dayMatchesFocus,
   dayPassesEventFilter,
@@ -33,6 +33,31 @@ describe("vote summary", () => {
   it("counts yes/maybe/no/total", () => {
     const votes: VotesByDate = { "2026-07-01": { a: "yes", b: "yes", c: "maybe", d: "no" } };
     expect(summarizeDay(votes, "2026-07-01")).toEqual({ yes: 2, maybe: 1, no: 1, total: 4 });
+  });
+});
+
+describe("strongest days", () => {
+  const days = enumerateDays("2026-07-01", "2026-07-05");
+  const votes: VotesByDate = {
+    "2026-07-01": { a: "yes", b: "yes", c: "yes" }, // best, but in the past
+    "2026-07-04": { a: "yes", b: "yes" },
+    "2026-07-05": { a: "yes" },
+  };
+
+  it("ranks by yes, then by responses", () => {
+    expect(getBestDays(days, votes).map((d) => d.iso)).toEqual([
+      "2026-07-01",
+      "2026-07-04",
+      "2026-07-05",
+    ]);
+  });
+
+  it("drops days before `notBefore` — a past day is never a suggestion", () => {
+    const from = new Date(2026, 6, 3);
+    expect(getBestDays(days, votes, from).map((d) => d.iso)).toEqual([
+      "2026-07-04",
+      "2026-07-05",
+    ]);
   });
 });
 

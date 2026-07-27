@@ -227,6 +227,9 @@ const en: Dict = {
   "events.newHint": "Record an event on any date, past or future",
   "events.onlyEvents": "With event",
   "events.onlyEventsHint": "Show only days that have an event",
+  "events.newestFirst": "Newest first",
+  "events.oldestFirst": "Oldest first",
+  "events.orderHint": "Switch between newest-first and oldest-first",
 
   "landing.eyebrow": "Group availability",
   "landing.lede": "Sign in to vote on the days you’re free and find when everyone can meet.",
@@ -445,6 +448,9 @@ const de: Dict = {
   "events.newHint": "Ereignis für ein beliebiges Datum festhalten, vergangen oder künftig",
   "events.onlyEvents": "Mit Ereignis",
   "events.onlyEventsHint": "Nur Tage mit einem Ereignis anzeigen",
+  "events.newestFirst": "Neueste zuerst",
+  "events.oldestFirst": "Älteste zuerst",
+  "events.orderHint": "Zwischen neueste- und älteste-zuerst wechseln",
 
   "landing.eyebrow": "Gemeinsame Verfügbarkeit",
   "landing.lede":

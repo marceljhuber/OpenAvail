@@ -13,6 +13,10 @@
 // `npm test`. Pass --keep-open to leave the browser up for a look around.
 //
 // Exit code is the number of failing pairs, so CI could gate on it later.
+//
+// Known limitation: only `background-color` is composited, not
+// `background-image` — a gradient wash behind text is invisible to this. Keep
+// decorative washes weak (see the contrast rules in CLAUDE.md).
 
 import { spawn } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";

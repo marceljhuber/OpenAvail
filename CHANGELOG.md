@@ -3,6 +3,40 @@
 A running diary of notable changes. Newest first. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); dates are Europe/Vienna.
 
+## 2026-07-27 (later)
+
+### The timeline grid was out of alignment
+Whole columns sat a few pixels off from each other, so the Y/M/N letters stepped
+up and down across the grid. **A CSS class collision:** the "no days match"
+paragraph is `.empty` with `padding: 24px 0`, and an *unvoted* grid cell is
+`.cell.vote.empty` — same component, same scoped stylesheet. Padding is not
+compressible, so with `box-sizing: border-box` the `max-height: 38px` on `.cell`
+could not hold and every blank cell rendered **48px** tall against its voted
+neighbours' 38px. Renamed the paragraph to `.no-match`, and `.cell` now sets
+`padding: 0` explicitly so no stray rule can inflate a pinned row again.
+Verified in the browser: all columns now report identical cell tops and heights,
+matching the sticky names column exactly.
+
+### Strongest days
+- The list no longer suggests **days that have already passed**. The default
+  range starts on the 1st of the current month, so early in the month it was
+  recommending dates that were already gone. `getBestDays` takes a `notBefore`
+  cut-off; the sidebar passes midnight today.
+
+### Event days stand out in the calendar
+A day holding an event now carries its colour three ways: a solid **bar along
+the top edge**, a **tinted border**, and a **wash that fades out downward** so
+the vote buttons keep a neutral base. The wash is a background *image* layered
+over the cell's background colour, so the yes-tint still reads through it — and
+so heatmap mode (which sets the `background` shorthand) cleanly replaces it,
+while the top bar still marks the day.
+
+### Events tab ordering
+Verified against events seeded across three years in deliberately jumbled order:
+the list **was** already correct — years newest-first, and newest-first within
+each year. Rather than guess at what looked wrong, the order is now **explicit
+and switchable**: a "Newest first / Oldest first" toggle next to the search box.
+
 ## 2026-07-27
 
 ### Fixes

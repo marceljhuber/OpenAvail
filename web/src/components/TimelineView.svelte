@@ -151,7 +151,7 @@
   </div>
 
   {#if total === 0}
-    <p class="empty">{$t("tl.noMatch")}</p>
+    <p class="no-match">{$t("tl.noMatch")}</p>
   {:else}
     <!-- Intentionally an interactive scroll region: drag/wheel/arrow-key panning.
          Accessible alternatives exist (the ⏮◀▶⏭ buttons and focus + arrow keys),
@@ -273,7 +273,11 @@
     opacity: 0.32;
     cursor: default;
   }
-  .empty {
+  /* NOT `.empty`: an unvoted grid cell is `.cell.vote.empty`, so this rule's
+     padding was landing on every blank cell in the grid and making it 48px
+     tall against the 38px of its voted neighbours — which knocked whole
+     columns out of alignment. */
+  .no-match {
     color: var(--muted);
     padding: 24px 0;
   }
@@ -340,6 +344,10 @@
     height: 38px;
     min-height: 38px;
     max-height: 38px;
+    /* explicit, because padding is NOT compressible: with box-sizing:border-box
+       a stray padding still floors the used height above max-height, and every
+       row in this grid has to line up to the pixel. */
+    padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;

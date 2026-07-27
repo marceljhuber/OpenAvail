@@ -5,7 +5,14 @@
   import { t, localeTag, voteShort } from "../lib/i18n";
 
   const rangeDays = $derived(enumerateDays($filters.rangeFrom, $filters.rangeTo));
-  const bestDays = $derived(getBestDays(rangeDays, $board.votes).slice(0, 8));
+
+  // midnight today — "strongest days" proposes days to meet on, so days that
+  // have already been and gone are excluded even when the range starts earlier
+  // (which it does by default: the range opens on the 1st of the current month)
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const bestDays = $derived(getBestDays(rangeDays, $board.votes, todayStart).slice(0, 8));
 
   const stats = $derived.by(() => {
     let bestYes = 0;
