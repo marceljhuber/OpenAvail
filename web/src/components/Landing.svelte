@@ -1,7 +1,9 @@
 <script lang="ts">
   import { appConfig, login, loginDev } from "../lib/stores";
   import { renderGoogleButton } from "../lib/google";
+  import { t } from "../lib/i18n";
   import ThemePicker from "./ThemePicker.svelte";
+  import LanguagePicker from "./LanguagePicker.svelte";
   import Logo from "./Logo.svelte";
 
   let buttonEl = $state<HTMLDivElement>();
@@ -20,7 +22,7 @@
     try {
       await loginDev(devName.trim());
     } catch (err) {
-      error = err instanceof Error ? err.message : "Sign-in failed.";
+      error = err instanceof Error ? err.message : $t("landing.signinError");
     } finally {
       busy = false;
     }
@@ -34,7 +36,7 @@
       // drop ?invite= from the URL after a successful join
       if (invite) history.replaceState(null, "", window.location.pathname);
     } catch (e) {
-      error = e instanceof Error ? e.message : "Sign-in failed.";
+      error = e instanceof Error ? e.message : $t("landing.signinError");
     } finally {
       busy = false;
     }
@@ -49,42 +51,41 @@
   });
 </script>
 
-<div class="theme-pick">
+<div class="corner-picks">
+  <LanguagePicker buttonClass="btn secondary theme-toggle badge" />
   <ThemePicker buttonClass="btn secondary theme-toggle" />
 </div>
 
 <main class="landing">
   <div class="card panel">
     <div class="brand"><Logo size={52} /></div>
-    <p class="eyebrow">Group availability</p>
-    <h1>{$appConfig?.ownerName ?? ""}'s OpenAvail</h1>
-    <p class="lede">
-      Sign in to vote on the days you’re free and find when everyone can meet.
-    </p>
+    <p class="eyebrow">{$t("landing.eyebrow")}</p>
+    <h1>{$t("app.title", { owner: $appConfig?.ownerName ?? "" })}</h1>
+    <p class="lede">{$t("landing.lede")}</p>
 
     {#if invite}
-      <p class="invite-note">You’ve been invited — sign in with Google to join.</p>
+      <p class="invite-note">{$t("landing.invited")}</p>
     {/if}
 
     <div class="signin" bind:this={buttonEl}></div>
 
     {#if busy}
-      <p class="muted">Signing you in…</p>
+      <p class="muted">{$t("landing.signingIn")}</p>
     {/if}
     {#if error}
       <p class="error">{error}</p>
     {/if}
 
     {#if !invite}
-      <p class="locked">This board is private. Ask the owner for an invite link to join.</p>
+      <p class="locked">{$t("landing.private")}</p>
     {/if}
 
     {#if $appConfig?.devLogin}
       <form class="dev" onsubmit={onDevLogin}>
-        <p class="dev-label">Dev login (local testing only)</p>
+        <p class="dev-label">{$t("landing.devLabel")}</p>
         <div class="dev-row">
-          <input placeholder="Your name" bind:value={devName} />
-          <button class="btn" type="submit">Continue</button>
+          <input placeholder={$t("landing.devName")} bind:value={devName} />
+          <button class="btn" type="submit">{$t("landing.devContinue")}</button>
         </div>
       </form>
     {/if}
@@ -99,18 +100,25 @@
     min-height: 100svh;
     padding: 24px;
   }
-  .theme-pick {
+  .corner-picks {
     position: fixed;
     top: 16px;
     right: 16px;
     z-index: var(--z-sticky);
+    display: flex;
+    gap: 8px;
   }
-  /* the button lives inside ThemePicker, so the rule has to escape this scope */
-  .theme-pick :global(.theme-toggle) {
+  /* the buttons live inside the picker components, so these rules escape scope */
+  .corner-picks :global(.theme-toggle) {
     min-width: var(--tap);
     padding: 0 10px;
     font-size: 15px;
     line-height: 1;
+  }
+  .corner-picks :global(.theme-toggle.badge) {
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0.06em;
   }
   .card {
     width: min(440px, 100%);

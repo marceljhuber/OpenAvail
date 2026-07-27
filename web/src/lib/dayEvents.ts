@@ -2,7 +2,6 @@
 // the shared month-hue used to tint the calendar and timeline.
 
 import type { DayEventAttendee, EventColor, User, VotesByDate } from "./types";
-import { getDayVoters } from "./vote";
 
 /** Inline style that binds an element's `--ev` to the event's palette token, so
  * its CSS can derive fills and text with color-mix. */
@@ -70,9 +69,11 @@ export function prefillAttendees(
   members: User[],
   iso: string,
 ): DayEventAttendee[] {
-  const yesNames = new Set(getDayVoters(votes, members, iso).yes);
+  // Match on user id, never on name: two members can share a display name, and
+  // matching by name would seed both off a single person's yes-vote.
+  const day = votes[iso] ?? {};
   return members
-    .filter((m) => yesNames.has(m.name))
+    .filter((m) => day[m.id] === "yes")
     .map((m) => ({ id: `member:${m.id}`, userId: m.id, name: m.name }));
 }
 

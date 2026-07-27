@@ -1,7 +1,7 @@
 <script lang="ts">
   import { appConfig, session, filters, selectedDay, logout } from "../lib/stores";
   import type { ViewKind } from "../lib/stores";
-  import { t, locale, setLocale, LOCALES } from "../lib/i18n";
+  import { t } from "../lib/i18n";
   import DayModal from "./DayModal.svelte";
   import CalendarView from "./CalendarView.svelte";
   import TimelineView from "./TimelineView.svelte";
@@ -10,7 +10,7 @@
   import Controls from "./Controls.svelte";
   import VotingsPanel from "./VotingsPanel.svelte";
   import AdminPanel from "./AdminPanel.svelte";
-  import HoverCard from "./HoverCard.svelte";
+  import LanguagePicker from "./LanguagePicker.svelte";
   import ThemePicker from "./ThemePicker.svelte";
   import Logo from "./Logo.svelte";
 
@@ -38,32 +38,7 @@
       <span class="name">{$t("app.title", { owner: $appConfig?.ownerName ?? "" })}</span>
     </div>
     <div class="session">
-      <!-- language picker -->
-      <HoverCard align="end" role="menu" label={$t("lang.choose")} cardClass="pick-menu">
-        {#snippet trigger()}
-          <button class="btn secondary icon badge" aria-haspopup="menu" title={$t("lang.choose")}>
-            {LOCALES.find((l) => l.code === $locale)?.short}
-          </button>
-        {/snippet}
-        {#snippet content(close)}
-          {#each LOCALES as l (l.code)}
-            <button
-              class="pick-item"
-              class:on={$locale === l.code}
-              role="menuitemradio"
-              aria-checked={$locale === l.code}
-              onclick={() => {
-                setLocale(l.code);
-                close();
-              }}
-            >
-              <span class="short">{l.short}</span>
-              {l.label}
-            </button>
-          {/each}
-        {/snippet}
-      </HoverCard>
-
+      <LanguagePicker />
       <ThemePicker />
 
       {#if $session}
@@ -160,18 +135,6 @@
     flex-wrap: wrap;
     min-width: 0;
   }
-  .btn.icon {
-    min-width: var(--tap);
-    padding: 0 10px;
-    font-size: 15px;
-    line-height: 1;
-  }
-  .btn.icon.badge {
-    font-size: 12px;
-    font-weight: 900;
-    letter-spacing: 0.06em;
-  }
-
   .avatar {
     width: 30px;
     height: 30px;

@@ -26,6 +26,8 @@ export interface Filters {
   view: ViewKind;
   /** calendar heatmap mode: shade each day green→red by how many said yes */
   heatmap: boolean;
+  /** narrow both day views to days that have a day event */
+  onlyEvents: boolean;
 }
 
 function defaultRange(): { rangeFrom: string; rangeTo: string } {
@@ -151,6 +153,7 @@ export const filters = writable<Filters>({
   sortBy: "date",
   view: "calendar",
   heatmap: false,
+  onlyEvents: false,
 });
 
 let eventSource: EventSource | null = null;

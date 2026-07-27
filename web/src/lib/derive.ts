@@ -21,6 +21,18 @@ export function dayMatchesFocus(
   return focusMembers.every((id) => day[id] === focusVote);
 }
 
+/**
+ * Does this day pass the "with event" filter? Inactive (every day passes) when
+ * the filter is off, so both day views can apply it unconditionally.
+ */
+export function dayPassesEventFilter(
+  events: Record<string, unknown>,
+  iso: string,
+  onlyEvents: boolean,
+): boolean {
+  return !onlyEvents || iso in events;
+}
+
 /** Count, among the focused members, how many cast `focusVote` on this day. */
 export function focusYesCount(
   votes: VotesByDate,

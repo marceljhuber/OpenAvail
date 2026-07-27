@@ -1,11 +1,18 @@
 <script lang="ts">
   // Reverse-chronological log of everything that happened, grouped by year.
-  import { dayEvents } from "../lib/stores";
+  import { dayEvents, selectedDay, session } from "../lib/stores";
+  import { toISO } from "../lib/date";
   import { t } from "../lib/i18n";
   import type { DayEventView } from "../lib/types";
   import EventCard from "./EventCard.svelte";
 
   let query = $state("");
+
+  const isAdmin = $derived($session?.role === "admin");
+
+  // The calendar is the other way in, but reaching a date years back means
+  // scrolling a year of months — so admins get a date box straight to the day.
+  let newDate = $state(toISO(new Date()));
 
   const all = $derived(
     Object.values($dayEvents).sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0)),
@@ -47,15 +54,29 @@
           : $t("events.count", { n: all.length })}
       </span>
     </div>
-    {#if all.length > 0}
-      <input
-        class="search"
-        type="search"
-        bind:value={query}
-        placeholder={$t("events.search")}
-        aria-label={$t("events.search")}
-      />
-    {/if}
+    <div class="tools">
+      {#if isAdmin}
+        <div class="new" title={$t("events.newHint")}>
+          <input type="date" bind:value={newDate} aria-label={$t("events.newDate")} />
+          <button
+            class="btn"
+            onclick={() => newDate && selectedDay.set(newDate)}
+            disabled={!newDate}
+          >
+            {$t("events.new")}
+          </button>
+        </div>
+      {/if}
+      {#if all.length > 0}
+        <input
+          class="search"
+          type="search"
+          bind:value={query}
+          placeholder={$t("events.search")}
+          aria-label={$t("events.search")}
+        />
+      {/if}
+    </div>
   </div>
 
   {#if all.length === 0}
@@ -104,6 +125,23 @@
     color: var(--muted);
     font-size: 12px;
     font-weight: 800;
+  }
+  .tools {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    min-width: 0;
+  }
+  .new {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+  .new input {
+    min-width: 0;
   }
   .search {
     flex: 0 1 280px;
@@ -161,6 +199,15 @@
   @media (max-width: 640px) {
     .events {
       padding: 14px;
+    }
+    .tools {
+      width: 100%;
+    }
+    .new {
+      flex: 1 1 100%;
+    }
+    .new input {
+      flex: 1;
     }
     .search {
       flex: 1 1 100%;

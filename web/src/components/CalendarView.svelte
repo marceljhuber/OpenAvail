@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
-  import { board, session, filters } from "../lib/stores";
+  import { board, dayEvents, session, filters } from "../lib/stores";
   import {
     weekdayLabels,
     addMonths,
@@ -11,7 +11,7 @@
     toISO,
   } from "../lib/date";
   import { summarizeDay } from "../lib/vote";
-  import { dayMatchesFocus } from "../lib/derive";
+  import { dayMatchesFocus, dayPassesEventFilter } from "../lib/derive";
   import { monthHue } from "../lib/dayEvents";
   import { t, localeTag } from "../lib/i18n";
   import DayCell from "./DayCell.svelte";
@@ -27,8 +27,20 @@
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
+  /** Months that actually hold an event, ascending. Used when the "with event"
+   * filter is on: driving the list off the events themselves (rather than
+   * filtering the rolling horizon) keeps it instant no matter how far back the
+   * oldest event sits, and stops the infinite-scroll growth from thrashing on a
+   * list that is nearly all filtered out. */
+  const eventMonths = $derived.by(() => {
+    const keys = [...new Set(Object.keys($dayEvents).map((iso) => iso.slice(0, 7)))].sort();
+    return keys.map((k) => new Date(Number(k.slice(0, 4)), Number(k.slice(5, 7)) - 1, 1));
+  });
+
   const months = $derived(
-    Array.from({ length: horizon + past }, (_, i) => addMonths(thisMonth, i - past)),
+    $filters.onlyEvents
+      ? eventMonths
+      : Array.from({ length: horizon + past }, (_, i) => addMonths(thisMonth, i - past)),
   );
 
   let scrollEl = $state<HTMLElement | null>(null);
@@ -62,6 +74,10 @@
     filters.update((f) => ({ ...f, heatmap: !f.heatmap }));
   }
 
+  function toggleOnlyEvents() {
+    filters.update((f) => ({ ...f, onlyEvents: !f.onlyEvents }));
+  }
+
   const maxYes = $derived.by(() => {
     let m = 0;
     for (const iso of Object.keys($board.votes)) {
@@ -87,6 +103,12 @@
     for (let d = 1; d <= count; d++) {
       const date = new Date(month.getFullYear(), month.getMonth(), d);
       const iso = toISO(date);
+      // filtered-out days become blanks rather than disappearing, so the
+      // remaining days stay in their real weekday column
+      if (!dayPassesEventFilter($dayEvents, iso, $filters.onlyEvents)) {
+        cells.push({ blank: true });
+        continue;
+      }
       cells.push({
         blank: false,
         date,
@@ -101,6 +123,9 @@
   const CAP = 600; // ~50 years each way, effectively infinite
 
   function growForward() {
+    // with the event filter on the month list comes from the events, not the
+    // horizon — growing it would just burn work on months nobody can see
+    if ($filters.onlyEvents) return;
     horizon = Math.min(horizon + 12, CAP);
   }
 
@@ -111,7 +136,7 @@
    */
   let growingBack = false;
   async function growBack(el: HTMLElement | null) {
-    if (growingBack || past >= CAP) return;
+    if (growingBack || past >= CAP || $filters.onlyEvents) return;
     growingBack = true;
     const heightBefore = el ? el.scrollHeight : document.documentElement.scrollHeight;
     past = Math.min(past + 12, CAP);
@@ -158,6 +183,16 @@
     >
       🔥 {$t("cal.heatmap")}
     </button>
+    <button
+      type="button"
+      class="heat-toggle"
+      class:on={$filters.onlyEvents}
+      onclick={toggleOnlyEvents}
+      aria-pressed={$filters.onlyEvents}
+      title={$t("events.onlyEventsHint")}
+    >
+      ◆ {$t("events.onlyEvents")}
+    </button>
     {#if $filters.heatmap}
       <div class="heat-legend" aria-hidden="true">
         <span>{$t("cal.fewer")}</span>
@@ -168,6 +203,9 @@
   </div>
 
   <div class="calendar-scroll" bind:this={scrollEl} onscroll={onScroll}>
+  {#if $filters.onlyEvents && months.length === 0}
+    <p class="no-events">{$t("events.empty")}</p>
+  {/if}
   {#each months as month (toISO(month))}
     {@const isPastMonth = toISO(month) < thisMonthISO}
     <section
@@ -234,6 +272,13 @@
     background: var(--btn);
     color: var(--btn-fg);
     border-color: var(--btn);
+  }
+  .no-events {
+    margin: 0;
+    padding: 40px 16px;
+    text-align: center;
+    color: var(--muted);
+    font-weight: 600;
   }
   .heat-legend {
     display: flex;

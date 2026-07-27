@@ -410,17 +410,36 @@ textarea {
   font-size: 12px;
   font-weight: 900;
 }
+/* The --*-soft tokens are translucent in the dark palettes, so a pill placed on
+   a tinted day cell (yes-shading, heatmap fill) let that tint through and fell
+   to ~2.7:1. Paint the tint as a layer over an opaque --surface base: same
+   look, but the ancestor's colour can no longer reach the text behind it. */
 .pill.yes {
   color: var(--yes-ink);
-  background: var(--yes-soft);
+  background: linear-gradient(var(--yes-soft), var(--yes-soft)) var(--surface);
 }
 .pill.maybe {
   color: var(--maybe-ink);
-  background: var(--maybe-soft);
+  background: linear-gradient(var(--maybe-soft), var(--maybe-soft)) var(--surface);
 }
 .pill.no {
   color: var(--no-ink);
-  background: var(--no-soft);
+  background: linear-gradient(var(--no-soft), var(--no-soft)) var(--surface);
+}
+
+/* Square-ish topbar buttons (theme + language pickers). Global because those
+   pickers are their own components, used from both the topbar and the landing
+   page, so no single scoped stylesheet can reach them. */
+.btn.icon {
+  min-width: var(--tap);
+  padding: 0 10px;
+  font-size: 15px;
+  line-height: 1;
+}
+.btn.icon.badge {
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
 }
 
 /* Dropdown menus. Global because HoverCard portals its card to <body>, outside

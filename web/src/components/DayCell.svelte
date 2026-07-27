@@ -225,9 +225,12 @@
     letter-spacing: 0.04em;
     flex: 0 0 auto;
   }
+  /* --ink, not --yes-ink: the cell behind this is itself tinted with --yes (and
+     with the heatmap fill on top of that), so a green ink on a green wash
+     measured 3.4–4.4:1 in every palette. */
   .yes-score {
     flex: 0 0 auto;
-    color: var(--yes-ink);
+    color: var(--ink);
     font-weight: 800;
     font-size: 12px;
     white-space: nowrap;
@@ -239,9 +242,10 @@
     padding: 2px 4px;
     font-size: 12px;
     font-weight: 800;
-    /* no opacity fade: it put this control under 3:1 in every palette.
-       --muted already reads as secondary and clears 4.5 on the cell. */
-    color: var(--muted);
+    /* Neither an opacity fade nor --muted survives here: --muted is solved
+       against --surface, but this button sits on the yes-tinted (and, in
+       heatmap mode, strongly coloured) cell, where it measured 2.65:1. */
+    color: var(--ink);
     line-height: 1;
   }
   .cbtn.has {
@@ -298,7 +302,8 @@
     border: 1px dashed var(--line);
     border-radius: 9px;
     background: transparent;
-    color: var(--muted);
+    /* same reason as .cbtn: --muted is too light against the tinted cell */
+    color: var(--ink);
     font-size: 11px;
     font-weight: 800;
     opacity: 0;

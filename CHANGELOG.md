@@ -3,6 +3,75 @@
 A running diary of notable changes. Newest first. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); dates are Europe/Vienna.
 
+## 2026-07-27
+
+### Fixes
+- **Attendee prefill picked the wrong person.** "From yes-votes" matched members
+  by *display name*, so two people called the same thing were both seeded from
+  one person's vote. It matches on user id now.
+- **The selected option in a voting was unreadable in the dark palettes.** Its
+  result bar mixed towards a hard-coded `white`, so a near-white label sat on a
+  near-white fill — **1.04:1**, the worst pair in the app. It mixes with
+  `--surface` now. (See the audit note below for why this went unnoticed.)
+- **Vote counts, the yes-score and the 💬 / + Event buttons** on a day cell were
+  measured against `--surface`, but they sit on the cell's *yes-tint* and, in
+  heatmap mode, on a strong colour fill — down to 2.65:1. The count pills now
+  paint their tint over an opaque base (the `--*-soft` tokens are translucent in
+  the dark palettes, so the cell colour was showing through), and the three
+  labels use `--ink`.
+
+### Accessibility
+- **Dialogs now manage focus.** The day and admin dialogs both claimed
+  `aria-modal="true"` while doing nothing to honour it: focus never entered the
+  dialog, Tab walked into the page behind it, and closing dropped focus on
+  `<body>`. A new `focusTrap` action moves focus in, wraps Tab/Shift-Tab, and
+  hands focus back to whatever opened the dialog.
+- Hover cards opened by keyboard or tap return focus to their trigger when
+  dismissed — the card is portaled to `<body>`, so focus had nowhere to go.
+
+### German, finished
+- **The landing page and the admin dialog were still entirely English**
+  (~35 strings, including both `confirm()` prompts). They are translated now.
+- The **language picker is on the landing page** too, so a visitor can switch
+  before signing in.
+- The one-letter vote badges follow the language: **J / V / N** in German.
+
+### Events
+- **An event can be created for any date from the Events tab** — a date box and
+  a ＋ button open the day directly. Reaching a date two years back previously
+  meant scrolling the calendar through two years of months.
+- **Events show in the timeline**, as a coloured dot in the day column that
+  opens the day.
+- A **"With event" filter** narrows both day views to days that hold an event;
+  in the calendar the month list is driven off the events themselves, so it
+  jumps straight to them however far back they are.
+
+### Icons
+- Added `apple-touch-icon.png` and 192/512 maskable PNGs, generated from a new
+  opaque `app-icon.svg` by `tools/make-icons.mjs` (run
+  `npm i --no-save sharp` first — it is not a repo dependency). iOS no longer
+  falls back to a screenshot for the home-screen icon.
+
+### The contrast audit is now in the repo
+`tools/contrast-audit.mjs` boots the app against a throwaway database, seeds it
+(including **one event per palette colour**), and walks 6 themes × 8 views.
+**4404 pairs, all ≥ 4.5:1**, tightest 4.80 — up from 2178 pairs, because the
+previous run had two blind spots that were hiding real failures:
+
+- it de-duplicated on the CSS class list alone, so all eight event cards
+  collapsed into one row and seven of the eight colours were never measured;
+- it composited only *ancestor* backgrounds, so an absolutely positioned sibling
+  painted behind text — the voting result bar — was invisible to it.
+
+Both are fixed, and the four earlier parser fixes (`color(srgb …)` from
+`color-mix`, faded elements, `::placeholder`, class-label collisions) are
+carried over. It is deliberately outside `npm test`: it drives a real browser.
+
+### Tests
+- A parity test asserts `EVENT_COLORS` and `DEFAULT_EVENT_COLOR` match across
+  the two workspaces. They are hand-duplicated and `normalizeColor` falls back
+  to `sage` rather than erroring, so a mismatch would otherwise be silent.
+
 ## 2026-07-26
 
 ### Day events — a memory of what actually happened

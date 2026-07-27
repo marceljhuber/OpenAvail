@@ -386,8 +386,13 @@
   .opt.on {
     border-color: var(--yes);
   }
+  /* --surface, not a hard-coded white: mixing towards white produced a pale
+     green fill in every palette while the label stayed --ink, which in the dark
+     palettes meant near-white text on near-white fill (1.04:1 — the worst pair
+     in the app). The bar is an absolutely positioned sibling *behind* the
+     label, which is why an ancestor-only contrast check never saw it. */
   .opt.on .bar {
-    background: color-mix(in srgb, var(--yes) 26%, white);
+    background: color-mix(in srgb, var(--yes) 26%, var(--surface));
   }
   .check {
     display: grid;

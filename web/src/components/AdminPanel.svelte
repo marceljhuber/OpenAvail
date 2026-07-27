@@ -1,6 +1,8 @@
 <script lang="ts">
   import { api } from "../lib/api";
   import { refreshBoard, session } from "../lib/stores";
+  import { t, localeTag } from "../lib/i18n";
+  import { focusTrap } from "../lib/focusTrap";
   import type { Invite, User } from "../lib/types";
 
   let { onClose }: { onClose: () => void } = $props();
@@ -22,7 +24,7 @@
       invites = inv;
       members = mem;
     } catch (e) {
-      error = e instanceof Error ? e.message : "Failed to load.";
+      error = e instanceof Error ? e.message : $t("admin.loadError");
     }
   }
 
@@ -39,7 +41,7 @@
       copied = invite.token;
       await load();
     } catch (e) {
-      error = e instanceof Error ? e.message : "Failed to create invite.";
+      error = e instanceof Error ? e.message : $t("admin.createInviteError");
     } finally {
       busy = false;
     }
@@ -51,7 +53,7 @@
   }
 
   async function revoke(token: string) {
-    if (!confirm("Revoke this invite link? It will stop working immediately.")) return;
+    if (!confirm($t("admin.confirmRevoke"))) return;
     await api.revokeInvite(token);
     await load();
   }
@@ -80,20 +82,20 @@
       cancelEdit();
       await Promise.all([load(), refreshBoard()]);
     } catch (e) {
-      error = e instanceof Error ? e.message : "Failed to rename member.";
+      error = e instanceof Error ? e.message : $t("admin.renameError");
     } finally {
       busy = false;
     }
   }
 
   async function remove(member: User) {
-    if (!confirm(`Remove ${member.name}? Their votes will be deleted.`)) return;
+    if (!confirm($t("admin.confirmRemove", { name: member.name }))) return;
     await api.removeMember(member.id);
     await Promise.all([load(), refreshBoard()]);
   }
 
   function fmt(iso: string) {
-    return new Date(iso).toLocaleString(undefined, {
+    return new Date(iso).toLocaleString($localeTag, {
       month: "short",
       day: "numeric",
       hour: "2-digit",
@@ -101,11 +103,18 @@
     });
   }
 
-  function status(row: InviteRow): string {
+  /** Stable identifier — also used as the CSS class, so it must stay English. */
+  function status(row: InviteRow): "active" | "expired" | "revoked" {
     if (row.revoked) return "revoked";
     if (!row.active) return "expired";
     return "active";
   }
+
+  const STATUS_KEY = {
+    active: "admin.statusActive",
+    expired: "admin.statusExpired",
+    revoked: "admin.statusRevoked",
+  } as const;
 </script>
 
 <svelte:window onkeydown={(e) => e.key === "Escape" && onClose()} />
@@ -117,10 +126,17 @@
     if (e.target === e.currentTarget) onClose();
   }}
 >
-  <div class="modal panel" role="dialog" aria-label="Manage board" aria-modal="true" tabindex="-1">
+  <div
+    class="modal panel"
+    role="dialog"
+    aria-label={$t("admin.title")}
+    aria-modal="true"
+    tabindex="-1"
+    use:focusTrap
+  >
     <header>
-      <h2>Manage board</h2>
-      <button class="x" onclick={onClose} aria-label="Close">✕</button>
+      <h2>{$t("admin.title")}</h2>
+      <button class="x" onclick={onClose} aria-label={$t("admin.close")}>✕</button>
     </header>
 
     {#if error}
@@ -129,28 +145,30 @@
 
     <section>
       <div class="sec-head">
-        <h3>Invite links</h3>
+        <h3>{$t("admin.invites")}</h3>
         <button class="btn" onclick={createInvite} disabled={busy}>
-          {busy ? "Creating…" : "Create invite link"}
+          {busy ? $t("admin.creating") : $t("admin.createInvite")}
         </button>
       </div>
-      <p class="hint">Anyone with an active link can sign in with Google and join (valid ~24h).</p>
+      <p class="hint">{$t("admin.inviteHint")}</p>
 
       {#if invites.length === 0}
-        <p class="muted">No invites yet.</p>
+        <p class="muted">{$t("admin.noInvites")}</p>
       {:else}
         <ul class="list">
           {#each invites as row (row.token)}
             <li class="row">
-              <span class="badge {status(row)}">{status(row)}</span>
+              <span class="badge {status(row)}">{$t(STATUS_KEY[status(row)])}</span>
               <code class="url">{row.url}</code>
-              <span class="exp muted">expires {fmt(row.expiresAt)}</span>
+              <span class="exp muted">{$t("admin.expires", { when: fmt(row.expiresAt) })}</span>
               <span class="actions">
                 <button class="link" onclick={() => copy(row)}>
-                  {copied === row.token ? "copied!" : "copy"}
+                  {copied === row.token ? $t("admin.copied") : $t("admin.copy")}
                 </button>
                 {#if status(row) === "active"}
-                  <button class="link danger" onclick={() => revoke(row.token)}>revoke</button>
+                  <button class="link danger" onclick={() => revoke(row.token)}>
+                    {$t("admin.revoke")}
+                  </button>
                 {/if}
               </span>
             </li>
@@ -160,7 +178,7 @@
     </section>
 
     <section>
-      <h3>Members ({members.length})</h3>
+      <h3>{$t("admin.members", { n: members.length })}</h3>
       <ul class="list">
         {#each members as m (m.id)}
           <li class="row member">
@@ -176,22 +194,28 @@
                   maxlength="80"
                   autofocus
                   onkeydown={(e) => e.key === "Escape" && cancelEdit()}
-                  aria-label="Member name"
+                  aria-label={$t("admin.memberName")}
                 />
-                <button class="link" type="submit" disabled={busy || !editName.trim()}>save</button>
-                <button class="link muted" type="button" onclick={cancelEdit}>cancel</button>
+                <button class="link" type="submit" disabled={busy || !editName.trim()}>
+                  {$t("admin.save")}
+                </button>
+                <button class="link muted" type="button" onclick={cancelEdit}>
+                  {$t("admin.cancel")}
+                </button>
               </form>
             {:else}
               <span class="who">
                 <strong>{m.name}</strong>
                 <span class="muted">{m.email}</span>
               </span>
-              <span class="role {m.role}">{m.role}</span>
-              <button class="link" onclick={() => startEdit(m)}>rename</button>
+              <span class="role {m.role}">
+                {m.role === "admin" ? $t("admin.roleAdmin") : $t("admin.roleMember")}
+              </span>
+              <button class="link" onclick={() => startEdit(m)}>{$t("admin.rename")}</button>
               {#if m.role === "admin" || m.id === $session?.id}
                 <span class="muted small">—</span>
               {:else}
-                <button class="link danger" onclick={() => remove(m)}>remove</button>
+                <button class="link danger" onclick={() => remove(m)}>{$t("admin.remove")}</button>
               {/if}
             {/if}
           </li>

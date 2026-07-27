@@ -222,6 +222,54 @@ const en: Dict = {
   "events.empty": "No events yet. Open a day in the calendar and record what happened.",
   "events.noMatch": "No events match your search.",
   "events.open": "Open day",
+  "events.newDate": "Date",
+  "events.new": "＋ New event",
+  "events.newHint": "Record an event on any date, past or future",
+  "events.onlyEvents": "With event",
+  "events.onlyEventsHint": "Show only days that have an event",
+
+  "landing.eyebrow": "Group availability",
+  "landing.lede": "Sign in to vote on the days you’re free and find when everyone can meet.",
+  "landing.invited": "You’ve been invited — sign in with Google to join.",
+  "landing.signingIn": "Signing you in…",
+  "landing.private": "This board is private. Ask the owner for an invite link to join.",
+  "landing.devLabel": "Dev login (local testing only)",
+  "landing.devName": "Your name",
+  "landing.devContinue": "Continue",
+  "landing.signinError": "Sign-in failed.",
+
+  "admin.title": "Manage board",
+  "admin.close": "Close",
+  "admin.loadError": "Failed to load.",
+  "admin.invites": "Invite links",
+  "admin.createInvite": "Create invite link",
+  "admin.creating": "Creating…",
+  "admin.createInviteError": "Failed to create invite.",
+  "admin.inviteHint": "Anyone with an active link can sign in with Google and join (valid ~24h).",
+  "admin.noInvites": "No invites yet.",
+  "admin.expires": "expires {when}",
+  "admin.copy": "copy",
+  "admin.copied": "copied!",
+  "admin.revoke": "revoke",
+  "admin.confirmRevoke": "Revoke this invite link? It will stop working immediately.",
+  "admin.statusActive": "active",
+  "admin.statusExpired": "expired",
+  "admin.statusRevoked": "revoked",
+  "admin.members": "Members ({n})",
+  "admin.memberName": "Member name",
+  "admin.rename": "rename",
+  "admin.renameError": "Failed to rename member.",
+  "admin.save": "save",
+  "admin.cancel": "cancel",
+  "admin.remove": "remove",
+  "admin.confirmRemove": "Remove {name}? Their votes will be deleted.",
+  "admin.roleAdmin": "admin",
+  "admin.roleMember": "member",
+
+  // one-letter vote badges (timeline cells, sidebar change log, day modal)
+  "vote.short.yes": "Y",
+  "vote.short.maybe": "M",
+  "vote.short.no": "N",
 };
 
 const de: Dict = {
@@ -392,9 +440,68 @@ const de: Dict = {
   "events.empty": "Noch keine Ereignisse. Öffne einen Tag im Kalender und halte fest, was war.",
   "events.noMatch": "Keine Ereignisse passen zur Suche.",
   "events.open": "Tag öffnen",
+  "events.newDate": "Datum",
+  "events.new": "＋ Neues Ereignis",
+  "events.newHint": "Ereignis für ein beliebiges Datum festhalten, vergangen oder künftig",
+  "events.onlyEvents": "Mit Ereignis",
+  "events.onlyEventsHint": "Nur Tage mit einem Ereignis anzeigen",
+
+  "landing.eyebrow": "Gemeinsame Verfügbarkeit",
+  "landing.lede":
+    "Melde dich an, um für deine freien Tage zu stimmen und zu sehen, wann alle können.",
+  "landing.invited": "Du wurdest eingeladen — melde dich mit Google an, um beizutreten.",
+  "landing.signingIn": "Du wirst angemeldet…",
+  "landing.private":
+    "Dieses Board ist privat. Frag die Besitzerin oder den Besitzer nach einem Einladungslink.",
+  "landing.devLabel": "Dev-Login (nur für lokale Tests)",
+  "landing.devName": "Dein Name",
+  "landing.devContinue": "Weiter",
+  "landing.signinError": "Anmeldung fehlgeschlagen.",
+
+  "admin.title": "Board verwalten",
+  "admin.close": "Schließen",
+  "admin.loadError": "Laden fehlgeschlagen.",
+  "admin.invites": "Einladungslinks",
+  "admin.createInvite": "Einladungslink erstellen",
+  "admin.creating": "Wird erstellt…",
+  "admin.createInviteError": "Einladung konnte nicht erstellt werden.",
+  "admin.inviteHint":
+    "Wer einen aktiven Link hat, kann sich mit Google anmelden und beitreten (ca. 24 Std. gültig).",
+  "admin.noInvites": "Noch keine Einladungen.",
+  "admin.expires": "läuft ab {when}",
+  "admin.copy": "kopieren",
+  "admin.copied": "kopiert!",
+  "admin.revoke": "widerrufen",
+  "admin.confirmRevoke": "Diesen Einladungslink widerrufen? Er funktioniert sofort nicht mehr.",
+  "admin.statusActive": "aktiv",
+  "admin.statusExpired": "abgelaufen",
+  "admin.statusRevoked": "widerrufen",
+  "admin.members": "Mitglieder ({n})",
+  "admin.memberName": "Name des Mitglieds",
+  "admin.rename": "umbenennen",
+  "admin.renameError": "Mitglied konnte nicht umbenannt werden.",
+  "admin.save": "speichern",
+  "admin.cancel": "abbrechen",
+  "admin.remove": "entfernen",
+  "admin.confirmRemove": "{name} entfernen? Die Stimmen dieser Person werden gelöscht.",
+  "admin.roleAdmin": "Admin",
+  "admin.roleMember": "Mitglied",
+
+  // Einbuchstabige Stimmkürzel (Zeitleiste, Änderungsprotokoll, Tagesdialog)
+  "vote.short.yes": "J",
+  "vote.short.maybe": "V",
+  "vote.short.no": "N",
 };
 
 const dict: Record<Locale, Dict> = { en, de };
+
+/** One-letter vote badges, localised (Y/M/N in English, J/V/N in German). The
+ * plain `VOTE_LABEL` in lib/vote.ts stays as the non-reactive English default. */
+export const voteShort = derived(locale, ($l) => ({
+  yes: dict[$l]["vote.short.yes"],
+  maybe: dict[$l]["vote.short.maybe"],
+  no: dict[$l]["vote.short.no"],
+}));
 
 /** Reactive translator: `$t("key", { var: value })`. Falls back to English, then the key. */
 export const t = derived(

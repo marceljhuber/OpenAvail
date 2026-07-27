@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { openDb } from "../src/db.js";
 import { deleteUser, renameUser, upsertUser } from "../src/repo.js";
@@ -12,6 +13,7 @@ import {
   sanitizeUrl,
   upsertDayEvent,
 } from "../src/dayEvents.js";
+import { DEFAULT_EVENT_COLOR, EVENT_COLORS } from "../src/types.js";
 import type { DayEventInput, User } from "../src/types.js";
 
 const now = (offsetMs = 0) => new Date(Date.now() + offsetMs).toISOString();
@@ -232,5 +234,29 @@ describe("normalizeColor", () => {
     expect(normalizeColor("chartreuse")).toBe("sage");
     expect(normalizeColor(undefined)).toBe("sage");
     expect(normalizeColor("#ff0000")).toBe("sage");
+  });
+});
+
+// The colour allow-list is hand-duplicated across the two workspaces (there is
+// no shared package) and `normalizeColor` falls back to sage rather than
+// erroring — so a colour added on one side only would silently degrade with no
+// failure anywhere. Read the web copy as text and compare.
+describe("EVENT_COLORS parity with the web workspace", () => {
+  const webTypes = readFileSync(
+    new URL("../../web/src/lib/types.ts", import.meta.url),
+    "utf8",
+  );
+
+  it("both workspaces list exactly the same colours", () => {
+    const block = /export const EVENT_COLORS = \[([\s\S]*?)\] as const;/.exec(webTypes);
+    expect(block, "EVENT_COLORS literal not found in web/src/lib/types.ts").toBeTruthy();
+    const web = [...block![1].matchAll(/"([a-z]+)"/g)].map((m) => m[1]);
+    expect(web.length).toBeGreaterThan(0);
+    expect([...web].sort()).toEqual([...EVENT_COLORS].sort());
+  });
+
+  it("both workspaces default to the same colour", () => {
+    const web = /export const DEFAULT_EVENT_COLOR: EventColor = "([a-z]+)";/.exec(webTypes);
+    expect(web?.[1]).toBe(DEFAULT_EVENT_COLOR);
   });
 });

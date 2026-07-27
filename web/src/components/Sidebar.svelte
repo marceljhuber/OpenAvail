@@ -1,8 +1,8 @@
 <script lang="ts">
   import { board, filters } from "../lib/stores";
   import { enumerateDays, formatLongDate, formatRelativeTime, parseISODate, toISO } from "../lib/date";
-  import { getBestDays, summarizeDay, VOTE_LABEL } from "../lib/vote";
-  import { t, localeTag } from "../lib/i18n";
+  import { getBestDays, summarizeDay } from "../lib/vote";
+  import { t, localeTag, voteShort } from "../lib/i18n";
 
   const rangeDays = $derived(enumerateDays($filters.rangeFrom, $filters.rangeTo));
   const bestDays = $derived(getBestDays(rangeDays, $board.votes).slice(0, 8));
@@ -58,9 +58,9 @@
             </div>
             <div class="muted small">{formatLongDate(parseISODate(c.date), $localeTag)}</div>
             <div class="votes">
-              <span class="tag {c.previousVote ?? 'none'}">{c.previousVote ? VOTE_LABEL[c.previousVote] : "—"}</span>
+              <span class="tag {c.previousVote ?? 'none'}">{c.previousVote ? $voteShort[c.previousVote] : "—"}</span>
               <span class="arrow">→</span>
-              <span class="tag {c.nextVote ?? 'none'}">{c.nextVote ? VOTE_LABEL[c.nextVote] : "—"}</span>
+              <span class="tag {c.nextVote ?? 'none'}">{c.nextVote ? $voteShort[c.nextVote] : "—"}</span>
             </div>
           </div>
         {/each}

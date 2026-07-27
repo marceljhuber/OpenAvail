@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { board, filters } from "../lib/stores";
+  import { board, dayEvents, filters, selectedDay } from "../lib/stores";
   import { enumerateDays, formatLongDate, toISO } from "../lib/date";
-  import { summarizeDay, VOTE_LABEL } from "../lib/vote";
-  import { dayMatchesFocus, sortDays } from "../lib/derive";
-  import { monthHue } from "../lib/dayEvents";
-  import { t, localeTag } from "../lib/i18n";
+  import { summarizeDay } from "../lib/vote";
+  import { dayMatchesFocus, dayPassesEventFilter, sortDays } from "../lib/derive";
+  import { colorStyle, monthHue } from "../lib/dayEvents";
+  import { t, localeTag, voteShort } from "../lib/i18n";
   import type { Vote } from "../lib/types";
 
   const COL_W = 46; // px per day column
@@ -23,9 +23,12 @@
   // highlights instead), so you can isolate e.g. "days Rainer can come".
   const days = $derived.by(() => {
     const all = enumerateDays($filters.rangeFrom, $filters.rangeTo);
-    const filtered = focusActive
-      ? all.filter((d) => dayMatchesFocus($board.votes, toISO(d), $filters.focusMembers, $filters.focusVote))
-      : all;
+    const filtered = all.filter((d) => {
+      const iso = toISO(d);
+      if (!dayPassesEventFilter($dayEvents, iso, $filters.onlyEvents)) return false;
+      if (!focusActive) return true;
+      return dayMatchesFocus($board.votes, iso, $filters.focusMembers, $filters.focusVote);
+    });
     return sortDays(filtered, $board.votes, $filters);
   });
 
@@ -185,16 +188,28 @@
         {#each visible as day (toISO(day))}
           {@const iso = toISO(day)}
           {@const s = summarizeDay($board.votes, iso)}
+          {@const ev = $dayEvents[iso]}
           <div class="col" class:month-start={isMonthStart(day)} style="width:{COL_W}px">
             <div class="cell head day" style="--mh:{hueOf(day)}" title={formatLongDate(day, $localeTag)}>
               <span class="mon">{day.toLocaleDateString($localeTag, { month: "short" })}</span>
               <span class="dnum">{day.getDate()}</span>
               <span class="dow">{day.toLocaleDateString($localeTag, { weekday: "narrow" })}</span>
+              {#if ev}
+                <!-- the memory layer, visible in this view too: click through to
+                     the day so the timeline isn't a dead end for events -->
+                <button
+                  class="ev-dot"
+                  style={colorStyle(ev.color)}
+                  onclick={() => selectedDay.set(iso)}
+                  title={ev.title}
+                  aria-label={ev.title}
+                ></button>
+              {/if}
             </div>
             <div class="cell summary">{s.yes}/{s.total}</div>
             {#each $board.members as m (m.id)}
               {@const v = voteOf(m.id, iso)}
-              <div class="cell vote {v ?? 'empty'}">{v ? VOTE_LABEL[v] : ""}</div>
+              <div class="cell vote {v ?? 'empty'}">{v ? $voteShort[v] : ""}</div>
             {/each}
           </div>
         {/each}
@@ -410,6 +425,22 @@
     color: color-mix(in srgb, var(--muted) 55%, var(--ink));
     font-weight: 700;
     font-size: 10px;
+  }
+  /* small colour flag on days that hold an event; the column is only 46px wide,
+     so it sits under the weekday letter rather than beside it */
+  .ev-dot {
+    width: 12px;
+    height: 5px;
+    margin-top: 1px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: var(--ev);
+  }
+  /* widen, never grow taller: the header is pinned to 56px and every column
+     must keep the same row alignment */
+  .ev-dot:hover {
+    width: 18px;
   }
   .vote {
     color: var(--muted);

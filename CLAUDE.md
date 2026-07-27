@@ -88,9 +88,11 @@ the OS flips. `app.css` also owns the z-index scale (`--z-sticky/-pop/-modal`) �
 `z-index` on it.
 
 ### Contrast rules (every palette is at WCAG AA, keep it that way)
-All 6 palettes were measured with a browser-driven audit (computed colours + composited ancestor
-backgrounds) across every view: **2178 text/background pairs, all ≥ 4.5:1**, tightest 4.80. The
-rules that keep it true:
+Run `tools/contrast-audit.mjs` after touching any colour — it boots the app against a scratch DB,
+seeds one event per palette colour, and walks 6 themes × 8 views measuring computed colours
+against real composited backgrounds: **4404 text/background pairs, all ≥ 4.5:1**, tightest 4.80.
+It needs `npm i --no-save playwright-core` and is deliberately **not** in `npm test` (real
+browser). Its exit code is the failure count. The rules that keep it true:
 
 - **`--yes` / `--maybe` / `--no` are fills, never text.** White on them measures 1.9–4.1:1. Text
   drawn *on* a solid vote fill uses `--on-yes` / `--on-maybe` / `--on-no` (deep tints of the fill,
@@ -104,6 +106,13 @@ rules that keep it true:
   cells are marked with a dashed border, not `opacity: .62`; the same applied to the 💬 button.
   Deliberate de-emphasis states (`.dim`, disabled controls) are exempt.
 - `::placeholder` is pinned to `--muted` — the UA default is far too faint in the dark palettes.
+- **Never mix towards a literal `white`/`black`** — mix towards `--surface`. `.opt.on .bar` did,
+  and produced a near-white fill under near-white text (1.04:1) in the dark palettes.
+- **A translucent token needs an opaque base under text.** `--yes-soft` & co. are `rgba(…)` in the
+  dark palettes, so a `.pill` on a tinted day cell let the tint through; they paint the tint as a
+  layer over `--surface` instead.
+- **Text on a *tinted container* must be solved against the tint, not `--surface`** — day-cell
+  labels sit on the yes-shading and the heatmap fill, so they use `--ink`, not `--muted`.
 
 ### Floating cards
 `HoverCard.svelte` + the `floating` action (`web/src/lib/popover.ts`) are the only way to show a
@@ -111,6 +120,11 @@ popover/menu. The card is portaled to `<body>` and positioned `fixed`, because a
 `position: absolute` inside `.calendar-scroll` gets clipped by its `overflow: auto` and pinned to
 one day-cell's width. It flips, clamps to the viewport, opens on tap where there is no hover, and
 its anchor wrapper is `display: contents` (so `floating` measures `firstElementChild`).
+
+### Dialogs
+Any element with `role="dialog"` must carry `use:focusTrap` (`web/src/lib/focusTrap.ts`) — it
+moves focus in, wraps Tab/Shift-Tab, and restores focus to the trigger on destroy. Without it
+`aria-modal="true"` is a lie: Tab escapes into the page behind.
 
 ## Conventions
 - Conventional Commits; commit per major feature. Never commit `.env`, `legacy/`, or `INDEX.md`

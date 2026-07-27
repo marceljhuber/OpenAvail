@@ -1,10 +1,11 @@
 <script lang="ts">
   import { api } from "../lib/api";
   import { board, session, commentCounts, dayEvents } from "../lib/stores";
-  import { getDayVoters, VOTE_LABEL } from "../lib/vote";
+  import { getDayVoters } from "../lib/vote";
   import { colorStyle } from "../lib/dayEvents";
+  import { focusTrap } from "../lib/focusTrap";
   import { formatLongDate, formatRelativeTime, parseISODate } from "../lib/date";
-  import { t, localeTag } from "../lib/i18n";
+  import { t, localeTag, voteShort } from "../lib/i18n";
   import type { Comment, Vote } from "../lib/types";
   import EventBody from "./EventBody.svelte";
   import EventEditor from "./EventEditor.svelte";
@@ -73,7 +74,14 @@
 <svelte:window onkeydown={(e) => e.key === "Escape" && !editingEvent && onClose()} />
 
 <div class="backdrop" role="presentation" onclick={(e) => e.target === e.currentTarget && onClose()}>
-  <div class="modal panel" role="dialog" aria-label={$t("day.details")} aria-modal="true" tabindex="-1">
+  <div
+    class="modal panel"
+    role="dialog"
+    aria-label={$t("day.details")}
+    aria-modal="true"
+    tabindex="-1"
+    use:focusTrap
+  >
     <header>
       <div class="htext">
         <p class="eyebrow">{$t("day.eyebrow")}</p>
@@ -108,7 +116,7 @@
     <section class="voters">
       {#each rows as row (row.vote)}
         <div class="vrow">
-          <span class="pill {row.vote}">{VOTE_LABEL[row.vote]}</span>
+          <span class="pill {row.vote}">{$voteShort[row.vote]}</span>
           {#if row.names.length}
             <span class="names">{row.names.join(", ")}</span>
           {:else}

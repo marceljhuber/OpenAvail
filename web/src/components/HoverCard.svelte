@@ -54,9 +54,20 @@
     closeTimer = setTimeout(() => (open = false), closeDelay);
   }
 
+  /** Dismiss deliberately (Escape, outside click, menu pick). The card is
+   * portaled to <body>, so if focus is inside it we must hand focus back to the
+   * trigger by hand — otherwise it lands on <body> and tabbing restarts at the
+   * top of the page. */
   function close() {
     clearTimers();
+    const inCard = cardEl?.contains(document.activeElement);
     open = false;
+    if (inCard) {
+      const back = anchorEl?.querySelector<HTMLElement>(
+        'a[href],button,input,select,textarea,[tabindex]:not([tabindex="-1"])',
+      );
+      back?.focus({ preventScroll: true });
+    }
   }
 
   function toggle() {

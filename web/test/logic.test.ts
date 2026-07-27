@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { enumerateDays, mondayBasedDay, toISO } from "../src/lib/date";
 import { summarizeDay } from "../src/lib/vote";
-import { dayMatchesFocus, focusYesCount, sortDays } from "../src/lib/derive";
+import {
+  dayMatchesFocus,
+  dayPassesEventFilter,
+  focusYesCount,
+  sortDays,
+} from "../src/lib/derive";
 import { linkIcon, linkKind, linkLabel, monthHue, prefillAttendees } from "../src/lib/dayEvents";
 import type { Filters } from "../src/lib/stores";
 import type { User, VotesByDate } from "../src/lib/types";
@@ -71,6 +76,20 @@ describe("focus filter + sort", () => {
   });
 });
 
+describe("with-event filter", () => {
+  const events = { "2026-07-01": {} };
+
+  it("passes everything while the filter is off", () => {
+    expect(dayPassesEventFilter(events, "2026-07-02", false)).toBe(true);
+    expect(dayPassesEventFilter({}, "2026-07-02", false)).toBe(true);
+  });
+
+  it("keeps only days that have an event once it is on", () => {
+    expect(dayPassesEventFilter(events, "2026-07-01", true)).toBe(true);
+    expect(dayPassesEventFilter(events, "2026-07-02", true)).toBe(false);
+  });
+});
+
 describe("day event links", () => {
   it("classifies known hosts and falls back to a generic link", () => {
     expect(linkKind("https://www.youtube.com/watch?v=x")).toBe("youtube");
@@ -110,6 +129,16 @@ describe("attendee prefill", () => {
   it("is empty for a day nobody said yes to", () => {
     expect(prefillAttendees({ "2026-07-01": { u1: "no" } }, members, "2026-07-01")).toEqual([]);
     expect(prefillAttendees({}, members, "2026-07-01")).toEqual([]);
+  });
+
+  it("matches on id, so a namesake is not seeded by someone else's yes-vote", () => {
+    const namesakes: User[] = [
+      { id: "u1", email: "ann1@x.com", name: "Ann", picture: "", role: "member" },
+      { id: "u2", email: "ann2@x.com", name: "Ann", picture: "", role: "member" },
+    ];
+    expect(prefillAttendees({ "2026-07-01": { u1: "yes" } }, namesakes, "2026-07-01")).toEqual([
+      { id: "member:u1", userId: "u1", name: "Ann" },
+    ]);
   });
 });
 
